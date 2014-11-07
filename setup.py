@@ -31,10 +31,10 @@ setup(
         'conda_env.cli',
         'conda_env.installers',
     ],
-    scripts=[
-        'bin/conda-env',
-    ],
     entry_points={
+        'conda.cmds': [
+            'conda-env = conda_env.cli.main',
+        ],
         'conda.env.installers': [
             'conda = conda_env.installers.conda',
             'pip = conda_env.installers.pip',
