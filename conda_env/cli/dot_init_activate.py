@@ -1,5 +1,6 @@
 from __future__ import absolute_import, print_function
 import subprocess
+import sys
 
 INITIALIZED_STR = "# conda-env initialized"
 CUSTOM_ACTIVATE = """
@@ -30,6 +31,18 @@ def configure_parser(sub_parsers):
 
 
 def execute(args, parser):
+    if sys.platform.startswith("win"):
+        return execute_windows(args, parser)
+    else:
+        return execute_posix(args, parser)
+
+
+def execute_windows(args, parser):
+    print("Windows support not yet implemented", file=sys.stderr)
+    return -1
+
+
+def execute_posix(args, parser):
     activate_name = subprocess.check_output(['which', 'activate']).strip()
     with open(activate_name, "rb+") as fp:
         activate = fp.read()
