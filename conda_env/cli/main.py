@@ -9,7 +9,7 @@ from . import main_export
 from . import main_list
 from . import main_remove
 
-from . import dot_init_activate
+from . import main_init_activate
 
 
 def create_parser():
@@ -21,7 +21,7 @@ def create_parser():
     main_list.configure_parser(sub_parsers)
     main_remove.configure_parser(sub_parsers)
 
-    dot_init_activate.configure_parser(sub_parsers)
+    main_init_activate.configure_parser(sub_parsers)
     return p
 
 
