@@ -1,10 +1,10 @@
 package:
   name: conda-env
-  version: 1.2.0alpha
+  version: 1.3.0alpha
 
 build:
   number: {{ environ.get('GIT_DESCRIBE_NUMBER', 0) }}
-  string: {{ environ.get('GIT_BUILD_STR', 'GIT_STUB') }}
+  string: py{{ environ.get('PY_VER').replace('.', '') }}_{{ environ.get('GIT_BUILD_STR', 'GIT_STUB') }}
   preserve_egg_dir: yes
 
 source:
@@ -17,6 +17,14 @@ requirements:
   run:
     - python
     - setuptools
+
+test:
+  commands:
+    - conda env -h
+    - conda env list -h
+    - conda env create -h
+    - conda env export -h
+    - conda env remove -h
 
 about:
   home: https://github.com/conda/conda-env/
