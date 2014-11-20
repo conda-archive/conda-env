@@ -22,7 +22,7 @@ else:
 
 setup(
     name="conda-env",
-    version="1.2.0",
+    version="1.3.0alpha",
     author="Continuum Analytics, Inc.",
     author_email="support@continuum.io",
     url="https://github.com/conda/conda-env",
@@ -43,10 +43,16 @@ setup(
         'conda_env.cli',
         'conda_env.installers',
     ],
+<<<<<<< HEAD
+=======
     scripts=[
         'bin/conda-env',
     ] + scripts,
+>>>>>>> conda/master
     entry_points={
+        'conda.cmds': [
+            'conda-env = conda_env.cli.main',
+        ],
         'conda.env.installers': [
             'conda = conda_env.installers.conda',
             'pip = conda_env.installers.pip',
