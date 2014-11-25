@@ -8,6 +8,7 @@ from . import main_create
 from . import main_export
 from . import main_list
 from . import main_remove
+from . import main_info
 
 
 def create_parser():
@@ -18,6 +19,7 @@ def create_parser():
     main_export.configure_parser(sub_parsers)
     main_list.configure_parser(sub_parsers)
     main_remove.configure_parser(sub_parsers)
+    main_info.configure_parser(sub_parsers)
     return p
 
 
