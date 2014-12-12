@@ -36,7 +36,18 @@ get_dirname() {
 }
 source "$(get_dirname ${_ABS_SCRIPT_LOCATION})/_conda-functions"
 
-if "$_THIS_DIR/conda" ..checkenv "$@"; then
+if [[ "$@" == "" ]]; then
+    _POSSIBLE_ENV_NAME="$(conda env info --only=name)"
+    if [[ "${_POSSIBLE_ENV_NAME}" != "" ]]; then
+        _ENV_NAME=$_POSSIBLE_ENV_NAME
+    else
+        _ENV_NAME=""
+    fi
+else
+    _ENV_NAME="$@"
+fi
+
+if "$_THIS_DIR/conda" ..checkenv $_ENV_NAME; then
     # Ensure we deactivate any scripts from the old env
     run_scripts "deactivate"
 
@@ -52,14 +63,14 @@ else
     return 1
 fi
 
-_NEW_PATH=$("$_THIS_DIR/conda" ..activate "$@")
+_NEW_PATH=$("$_THIS_DIR/conda" ..activate ${_ENV_NAME})
 if (( $? == 0 )); then
     export PATH=$_NEW_PATH
     # If the string contains / it's a path
-    if [[ "$@" == */* ]]; then
-        export CONDA_DEFAULT_ENV=$(get_abs_filename "$@")
+    if [[ "${_ENV_NAME}" == */* ]]; then
+        export CONDA_DEFAULT_ENV=$(get_abs_filename ${_ENV_NAME})
     else
-        export CONDA_DEFAULT_ENV="$@"
+        export CONDA_DEFAULT_ENV=$_ENV_NAME
     fi
 
     if (( $("$_THIS_DIR/conda" ..changeps1) ));  then
