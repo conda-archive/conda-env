@@ -110,9 +110,7 @@ class Environment(object):
     def to_yaml(self, stream=None):
         d = self.to_dict()
         if stream is None:
-            unconverted = yaml.dump(d, default_flow_style=False)
-            result = unicode(unconverted)
-            return result
+            return unicode(yaml.dump(d, default_flow_style=False))
         else:
             yaml.dump(d, default_flow_style=False, stream=stream)
 
