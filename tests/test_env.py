@@ -15,6 +15,8 @@ from conda_env import exceptions
 
 from . import utils
 
+from nose.plugins.attrib import attr
+
 
 class FakeStream(object):
     def __init__(self):
@@ -274,6 +276,16 @@ class LoadEnvFromFileAndSaveTestCase(unittest.TestCase):
         e = env.load_from_directory(self.env_path)
         self.assertEqual(2, len(e.dependencies['conda']))
         self.assert_('numpy' in e.dependencies['conda'])
+
+    def test_unicode(self):
+        self.env.dependencies.add('Катюша')
+
+        self.env.save()
+
+        e = env.load_from_directory(self.env_path)
+        self.assertEqual(2, len(e.dependencies['conda']))
+        self.assert_('Катюша' not in e.dependencies['conda'])
+        self.assert_('катюша' in e.dependencies['conda'])
 
 
 class EnvironmentSaveTestCase(unittest.TestCase):

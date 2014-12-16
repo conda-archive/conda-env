@@ -44,6 +44,16 @@ def from_environment(name, prefix):
 
     return Environment(name=name, dependencies=dependencies)
 
+# def new_from_file(filenames = []):
+#     for filename in filenames:
+#         if os.path.exists(filename):
+#             break
+#     else:
+#         raise exceptions.EnvironmentFileNotFound(filename)
+#     print(filename)
+#     with open(filename, 'rb') as fp:
+#         data = yaml.load(fp)
+#     return Environment(filename=filename, **data)
 
 def from_file(filename):
     if not os.path.exists(filename):
@@ -100,10 +110,12 @@ class Environment(object):
     def to_yaml(self, stream=None):
         d = self.to_dict()
         if stream is None:
-            return unicode(yaml.dump(d, default_flow_style=False))
+            unconverted = yaml.dump(d, default_flow_style=False)
+            result = unicode(unconverted)
+            return result
         else:
             yaml.dump(d, default_flow_style=False, stream=stream)
 
     def save(self):
-        with open(self.filename, "wb") as fp:
+        with open(self.filename, 'w') as fp:
             self.to_yaml(stream=fp)
