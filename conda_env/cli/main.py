@@ -33,6 +33,7 @@ from . import main_export
 from . import main_list
 from . import main_remove
 from . import main_upload
+from . import main_update
 
 
 def create_parser():
@@ -44,7 +45,7 @@ def create_parser():
     main_list.configure_parser(sub_parsers)
     main_remove.configure_parser(sub_parsers)
     main_upload.configure_parser(sub_parsers)
-
+    main_update.configure_parser(sub_parsers)
     return p
 
 
