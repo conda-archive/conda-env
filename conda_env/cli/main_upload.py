@@ -12,6 +12,7 @@ from .. import exceptions
 # Raise an appropriate error later only if conda-env upload is called
 try:
     from binstar_client.utils import get_binstar
+    from binstar_client import errors as binstar_errors
     from ..utils import binstar_uilts
 except ImportError:
     get_binstar = None
@@ -63,6 +64,11 @@ def configure_parser(sub_parsers):
         help='Short summary of the environment',
     )
     p.add_argument(
+        '--force',
+        action='store_true',
+        help='Force remove any existing files with the same version and name',
+    )
+    p.add_argument(
         '-q', '--quiet',
         default=False,
     )
@@ -105,7 +111,7 @@ def execute(args, parser):
     if not (args.version or env_data.get('version')):
             # TODO It would be nice to be able to format this more cleanly
             common.error_and_exit(
-                'An version is required to upload environments to binstar.\n\n'
+                'A version is required to upload environments to binstar.\n\n'
                 'You can either specify one directly with --version or you can add\n'
                 'a version property to your %s file.' % args.file,
                 json=args.json
@@ -123,14 +129,32 @@ def execute(args, parser):
     if not args.user:
         args.user = user['login']
 
+    if not args.summary:
+        args.summary = env_data.get('summary')
+
     binstar_uilts.ensure_package_namespace(binstar,
                                            args.user, args.name, args.version,
                                            args.summary)
 
-    print("Uploading environment %s to anaconda-server ... " % (args.name))
+    basename = os.path.basename(args.file)
+    print("Uploading environment %s to anaconda-server (%s)... " % (args.name, binstar.domain))
+    try:
+        binstar.distribution(args.user, args.name, args.version, basename)
+    except binstar_errors.NotFound:
+        pass
+    else:
+        if args.force:
+            binstar.remove_dist(args.user, args.name, args.version, basename)
+        else:
+            env_path = "%s/%s/%s/%s" % (args.user, args.name, args.version, basename)
+            common.error_and_exit(
+                'The environment path %s already exists on binstar \n\n'
+                'If you want to overwrite this file use the --force option' % (env_path),
+                json=args.json
+            )
 
     binstar.upload(args.user, args.name, args.version,
-                   os.path.basename(args.file), open(args.file),
+                   basename, open(args.file),
                    distribution_type=binstar_uilts.ENVIRONMENT_TYPE,
                    attrs=env_data)
 
