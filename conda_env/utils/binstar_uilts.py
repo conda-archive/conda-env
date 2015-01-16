@@ -76,7 +76,8 @@ def download_environment_file(package_spec, filename, json=False):
     try:
         package = binstar.package(spec.username, spec.package_name)
     except errors.NotFound:
-            common.error_and_exit(("The package %s/%s was not found on binstar" %
+            common.error_and_exit(("The package %s/%s was not found on binstar. "
+                                   "(If this is a private package, you may need to be logged in to see it. run 'binstar login')" %
                                    (spec.username, spec.package_name)),
                                   json=json)
 
