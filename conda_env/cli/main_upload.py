@@ -7,12 +7,14 @@ from conda.cli import common
 
 from ..env import from_file
 from .. import exceptions
-from binstar_client.utils import upload_print_callback
 
+
+# Raise an appropriate error later only if conda-env upload is called
 try:
-    from binstar_client.utils import get_binstar, cli as cli_utils
+    from binstar_client.utils import get_binstar
+    from ..utils import binstar_uilts
 except ImportError:
-    get_binstar = cli_utils = None
+    get_binstar = None
 
 description = """
 Upload an environment to binstar
@@ -25,7 +27,6 @@ examples:
     conda env upload -f=/path/to/environment.yml
     conda env upload --name=foo --file=environment.yml
 """
-
 
 def configure_parser(sub_parsers):
     p = sub_parsers.add_parser(
@@ -58,8 +59,8 @@ def configure_parser(sub_parsers):
         help='Version of the environment',
     )
     p.add_argument(
-        '--description',
-        help='Short description of the environment',
+        '--summary',
+        help='Short summary of the environment',
     )
     p.add_argument(
         '-q', '--quiet',
@@ -71,7 +72,7 @@ def configure_parser(sub_parsers):
 
 def execute(args, parser):
 
-    if cli_utils is None:
+    if get_binstar is None:
         raise exceptions.NoBinstar()
 
     try:
@@ -100,27 +101,39 @@ def execute(args, parser):
         # be specified.
         args.name = env.name
 
-    dict(env.to_dict())
+    env_data = dict(env.to_dict())
+    if not (args.version or env_data.get('version')):
+            # TODO It would be nice to be able to format this more cleanly
+            common.error_and_exit(
+                'An version is required to upload environments to binstar.\n\n'
+                'You can either specify one directly with --version or you can add\n'
+                'a version property to your %s file.' % args.file,
+                json=args.json
+            )
+        # Note: stubbing out the args object as all of the
+        # conda.cli.common code thinks that name will always
+        # be specified.
+    elif not args.version:
+        args.version = env_data['version']
+
     binstar = get_binstar()
 
-    user = cli_utils.ensure_loggedin(binstar)
+    user = binstar_uilts.ensure_loggedin(binstar)
 
-    if args.user:
-        username = args.user
-    else:
-        username = user['login']
+    if not args.user:
+        args.user = user['login']
 
-    env_data = dict(env.to_dict())
-    version = args.version or env_data.get('version', '1.0')
+    binstar_uilts.ensure_package_namespace(binstar,
+                                           args.user, args.name, args.version,
+                                           args.summary)
 
-    cli_utils.ensure_package_namespace(binstar, username, env.name, version)
+    print("Uploading environment %s to anaconda-server ... " % (args.name))
 
-    print("Uploading environment %s to anaconda-server" % (env.name))
-    binstar.upload(username, env.name, version,
+    binstar.upload(args.user, args.name, args.version,
                    os.path.basename(args.file), open(args.file),
-                   distribution_type='env',
-                   description=args.description,
-                   attrs=env_data,
-                   callback=upload_print_callback(None))
+                   distribution_type=binstar_uilts.ENVIRONMENT_TYPE,
+                   attrs=env_data)
+
+    print("done")
 
 
