@@ -33,7 +33,7 @@ _THIS_DIR=$(dirname "$_SCRIPT_LOCATION")
 
 # Load common functions
 get_dirname() {
-    echo "$(cd "$(dirname "$1")" && pwd)"
+    echo "$(dirname "$1")"
 }
 source "$(get_dirname ${_ABS_SCRIPT_LOCATION})/_conda-functions"
 
