@@ -12,15 +12,9 @@ instead of 'deactivate'.
     exit 1
 fi
 
-# Determine the directory containing this script
-if [[ -n $BASH_VERSION ]]; then
-    _SCRIPT_LOCATION=${BASH_SOURCE[0]}
-elif [[ -n $ZSH_VERSION ]]; then
-    _SCRIPT_LOCATION=${funcstack[1]}
-else
-    echo "Only bash and zsh are supported"
-    return 1
-fi
+# Determine the filename of this script
+_SCRIPT_LOCATION="${1}"
+
 _THIS_DIR=$(dirname "$_SCRIPT_LOCATION")
 # Provide a symlink-resovled script location
 _ABS_SCRIPT_LOCATION=$_SCRIPT_LOCATION
@@ -54,7 +48,4 @@ if [[ -n $BASH_VERSION ]]; then
     hash -r
 elif [[ -n $ZSH_VERSION ]]; then
     rehash
-else
-    echo "Only bash and zsh are supported"
-    return 1
 fi

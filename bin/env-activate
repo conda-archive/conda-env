@@ -11,18 +11,12 @@ instead of 'activate envname'.
     exit 1
 fi
 
-# Determine the directory containing this script
-if [[ -n $BASH_VERSION ]]; then
-    _SCRIPT_LOCATION=${BASH_SOURCE[0]}
-elif [[ -n $ZSH_VERSION ]]; then
-    _SCRIPT_LOCATION=${funcstack[1]}
-else
-    echo "Only bash and zsh are supported"
-    return 1
-fi
+# Determine the filename of this script
+_SCRIPT_LOCATION="${1}"
 
 # Provide an absolute script location that resolves symlinks
-_ABS_SCRIPT_LOCATION=$_SCRIPT_LOCATION
+_ABS_SCRIPT_LOCATION=${_SCRIPT_LOCATION}
+
 while [ -h "$_ABS_SCRIPT_LOCATION" ]; do
     _DIR="$( cd -P "$(dirname $_ABS_SCRIPT_LOCATION)" && pwd )"
     _ABS_SCRIPT_LOCATION="$(readlink "$_ABS_SCRIPT_LOCATION")"
@@ -54,13 +48,15 @@ else
 fi
 
 _NEW_PATH=$("$_THIS_DIR/conda" ..activate "$@")
+# If the conda call didn't fail, activate this script.
 if (( $? == 0 )); then
     export PATH=$_NEW_PATH
+    env="${2}"
     # If the string contains / it's a path
-    if [[ "$@" == */* ]]; then
-        export CONDA_DEFAULT_ENV=$(get_abs_filename "$@")
+    if [[ "${env}" == */* ]]; then
+        export CONDA_DEFAULT_ENV=$(get_abs_filename "${env}")
     else
-        export CONDA_DEFAULT_ENV="$@"
+        export CONDA_DEFAULT_ENV="${env}"
     fi
 
     if (( $("$_THIS_DIR/conda" ..changeps1) ));  then
@@ -74,11 +70,9 @@ fi
 # Load any of the scripts found $PREFIX/etc/conda/activate.d
 run_scripts "activate"
 
+# Hash the new environment for performance reasons.
 if [[ -n $BASH_VERSION ]]; then
     hash -r
 elif [[ -n $ZSH_VERSION ]]; then
     rehash
-else
-    echo "Only bash and zsh are supported"
-    return 1
 fi
