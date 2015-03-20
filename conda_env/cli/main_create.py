@@ -13,11 +13,9 @@ from conda.misc import touch_nonadmin
 from ..env import from_file
 from ..installers.base import get_installer, InvalidInstaller
 from .. import exceptions
+from . import helpers
 
-ENTRY_POINTS = {
-    "configure_parser": "%s.configure_parser" % __name__,
-    "execute": "%s.execute" % __name__,
-}
+ENTRY_POINTS = helpers.generate_entry_points(__name__)
 
 description = """
 Create an environment based on an environment file
