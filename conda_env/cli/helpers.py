@@ -15,6 +15,15 @@ def generate_entry_points(name):
 
 # TODO Extract to third-party package
 def enable_entry_point_override(entry_point_name):
+    """
+    Wraps a given function with entry point calls that can override behavior
+
+    Use this to add a middleware like layer to a function call.  It's used
+    inside conda_env to allow third-party code to change the behavior of the
+    various subcommands.  For example, you can add a hook that provides an
+    additional parameter via the configure_parser hook, then if you detect that
+    behavior, change code execution appropriately inside your execute hook.
+    """
     def outer(func):
         @wraps(func)
         def inner(*args, **kwargs):
