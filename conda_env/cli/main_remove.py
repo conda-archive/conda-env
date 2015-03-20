@@ -5,6 +5,10 @@ import textwrap
 
 from conda.cli import common
 
+from . import helpers
+
+ENTRY_POINTS = helpers.generate_entry_points(__name__)
+
 _help = "Remove an environment"
 _description = _help + """
 
@@ -38,6 +42,7 @@ def configure_parser(sub_parsers):
     p.set_defaults(func=execute)
 
 
+@helpers.enable_entry_point_override(ENTRY_POINTS["execute"])
 def execute(args, parser):
     from conda import config, plan
     from conda.install import linked, rm_rf
