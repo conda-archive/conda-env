@@ -2,6 +2,7 @@ from functools import wraps
 import pkg_resources
 
 
+# TODO Extract to third-party package
 def generate_entry_points(name):
     """
     Internal function for generating command entry points
@@ -12,6 +13,7 @@ def generate_entry_points(name):
     }
 
 
+# TODO Extract to third-party package
 def enable_entry_point_override(entry_point_name):
     def outer(func):
         @wraps(func)
