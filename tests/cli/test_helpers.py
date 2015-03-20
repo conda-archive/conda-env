@@ -1,5 +1,10 @@
 import random
+from contextlib import contextmanager
 from unittest import TestCase
+try:
+    from unitest import mock
+except ImportError:
+    import mock
 
 from conda_env.cli import helpers
 
@@ -33,3 +38,120 @@ class GenerateEntryPointsTestCase(TestCase):
         eps = helpers.generate_entry_points(random_module)
         expected = "%s.execute" % random_module
         self.assertEqual(expected, eps["execute"])
+
+
+class EntryPointOverrideDecoratorTestCase(TestCase):
+    def test_requires_one_arguments(self):
+        with self.assertRaises(TypeError):
+            helpers.enable_entry_point_override()
+            helpers.enable_entry_point_override("foo", "bar")
+
+    def test_wraps_func_as_its_own(self):
+        @helpers.enable_entry_point_override("foo")
+        def my_execute():
+            pass
+
+        self.assertEqual("my_execute", my_execute.__name__)
+
+    def test_passes_to_func_if_no_entry_points(self):
+        r = random.randint(1000, 2000)
+
+        @helpers.enable_entry_point_override("foo")
+        def my_func():
+            return r
+
+        with mock.patch.object(helpers, "pkg_resources") as pkg_resources:
+            pkg_resources.iter_entry_points.returns = []
+            self.assertEqual(r, my_func())
+
+    def test_passes_all_args_to_func(self):
+        r = random.randint(1000, 2000)
+
+        @helpers.enable_entry_point_override("foo")
+        def my_func(one, two):
+            return one * two
+
+        with mock.patch.object(helpers, "pkg_resources") as pkg_resources:
+            pkg_resources.iter_entry_points.returns = []
+            self.assertEqual(r * r, my_func(r, r))
+
+    def test_passes_all_kwargs_to_func(self):
+        r = random.randint(1000, 2000)
+
+        @helpers.enable_entry_point_override("foo")
+        def my_func(one=1, two=1):
+            return one * two
+
+        with mock.patch.object(helpers, "pkg_resources") as pkg_resources:
+            pkg_resources.iter_entry_points.returns = []
+            self.assertEqual(1, my_func(), msg="call with default kwargs")
+            self.assertEqual(r * r, my_func(one=r, two=r))
+
+    def test_dispatches_to_execute_func(self):
+        @helpers.enable_entry_point_override("foo")
+        def my_func():
+            self.fail(msg="should never execute")
+
+        with mock_execute_entry_point() as custom_execute:
+            my_func()
+
+        self.assertTrue(custom_execute.called)
+
+    def test_passes_args_to_helper(self):
+        @helpers.enable_entry_point_override("foo")
+        def my_func_with_args(one, two):
+            self.fail(msg="should never execute")
+
+        with mock_execute_entry_point() as custom_execute:
+            expected_args = ["one", "two",
+                             "random%d" % random.randint(100, 200)]
+            my_func_with_args(*expected_args)
+        custom_execute.assert_called_with(*expected_args)
+
+    def test_passes_kwargs_to_helper(self):
+        r = random.randint(1000, 2000)
+
+        @helpers.enable_entry_point_override("foo")
+        def my_func_with_kwargs(one=1, two=2, random=r):
+            self.fail(msg="should never execute")
+
+        with mock_execute_entry_point() as custom_execute:
+            expected_kwargs = {
+                "one": "one",
+                "two": "two",
+                "random": random.randint(100, 200),
+            }
+            my_func_with_kwargs(**expected_kwargs)
+        custom_execute.assert_called_with(**expected_kwargs)
+
+    def test_returns_entry_point_value_on_not_none_return(self):
+        @helpers.enable_entry_point_override("foo")
+        def my_func():
+            pass
+
+        with mock_execute_entry_point() as custom_execute:
+            self.assertEqual(custom_execute.return_value, my_func())
+
+    def test_passes_to_decorated_func_if_entry_point_returns_none(self):
+        r = random.randint(1000, 2000)
+
+        @helpers.enable_entry_point_override("foo")
+        def my_func():
+            return r
+
+        with mock_execute_entry_point() as custom_execute:
+            custom_execute.return_value = None
+            self.assertEqual(r, my_func())
+
+
+@contextmanager
+def mock_execute_entry_point():
+    custom_execute = mock.Mock(return_value="foobar")
+    entry_point = mock.Mock()
+    entry_point.load.return_value = custom_execute
+
+    with mock.patch.object(helpers, "pkg_resources") as pkg_resources:
+        pkg_resources.iter_entry_points = mock.Mock(
+            return_value=[entry_point]
+        )
+        yield custom_execute

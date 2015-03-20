@@ -76,23 +76,7 @@ def configure_parser(sub_parsers):
     p.set_defaults(func=execute)
 
 
-def allow_entry_point_override(name):
-    def outer(func):
-        def inner(*args, **kwargs):
-            entry_points = pkg_resources.iter_entry_points(
-                ENTRY_POINTS["execute"]
-            )
-            for entry_point in entry_points:
-                ep = entry_point.load()
-                ret = ep(*args, **kwargs)
-                if ret is not None:
-                    return ret
-            return func(*args, **kwargs)
-        return inner
-    return outer
-
-
-@allow_entry_point_override(ENTRY_POINTS["execute"])
+@helpers.enable_entry_point_override(ENTRY_POINTS["execute"])
 def execute(args, parser):
     try:
         env = from_file(args.file)
