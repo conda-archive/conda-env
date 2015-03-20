@@ -46,6 +46,14 @@ setup(
         'conda_env.cli',
         'conda_env.installers',
     ],
+    entry_points={
+        'conda_env.cli.main_create.configure_parser': [
+            'one = conda_env.cli.main_create:sub_parser',
+        ],
+        'conda_env.cli.main_create.execute': [
+            'one = conda_env.cli.main_create:sub_execute',
+        ]
+    },
     scripts=[
         'bin/conda-env',
     ] + scripts,

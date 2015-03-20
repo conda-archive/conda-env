@@ -3,6 +3,8 @@ import os
 import textwrap
 import sys
 
+import pkg_resources
+
 from conda import config
 from conda.cli import common
 from conda.cli import install as cli_install
@@ -11,6 +13,11 @@ from conda.misc import touch_nonadmin
 from ..env import from_file
 from ..installers.base import get_installer, InvalidInstaller
 from .. import exceptions
+
+ENTRY_POINTS = {
+    "configure_parser": "%s.configure_parser" % __name__,
+    "execute": "%s.execute" % __name__,
+}
 
 description = """
 Create an environment based on an environment file
@@ -23,6 +30,15 @@ examples:
     conda env create -f=/path/to/environment.yml
     conda env create --name=foo --file=environment.yml
 """
+
+
+def sub_parser(p):
+    print("sub_parser invoked")
+
+
+def sub_execute(args, parser):
+    print("sub_execute invoked")
+    return
 
 
 def configure_parser(sub_parsers):
@@ -52,9 +68,33 @@ def configure_parser(sub_parsers):
         default=False,
     )
     common.add_parser_json(p)
+
+    entry_points = pkg_resources.iter_entry_points(
+        ENTRY_POINTS["configure_parser"]
+    )
+    for entry_point in entry_points:
+        entry_point.load()(p)
+
     p.set_defaults(func=execute)
 
 
+def allow_entry_point_override(name):
+    def outer(func):
+        def inner(*args, **kwargs):
+            entry_points = pkg_resources.iter_entry_points(
+                ENTRY_POINTS["execute"]
+            )
+            for entry_point in entry_points:
+                ep = entry_point.load()
+                ret = ep(*args, **kwargs)
+                if ret is not None:
+                    return ret
+            return func(*args, **kwargs)
+        return inner
+    return outer
+
+
+@allow_entry_point_override(ENTRY_POINTS["execute"])
 def execute(args, parser):
     try:
         env = from_file(args.file)
@@ -108,4 +148,3 @@ def execute(args, parser):
     touch_nonadmin(prefix)
     if not args.json:
         cli_install.print_activate(args.name if args.name else prefix)
-
