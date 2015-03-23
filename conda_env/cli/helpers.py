@@ -13,6 +13,18 @@ def generate_entry_points(name):
     }
 
 
+def generate_next(func, after):
+    def next(*args, **kwargs):
+        return after(*args, **kwargs)
+
+    def wrapper(*args, **kwargs):
+        print("calling %s with args %s / kwargs %s" % (func, args, kwargs))
+
+        func.next = next
+        return func(*args, **kwargs)
+    return wrapper
+
+
 # TODO Extract to third-party package
 def enable_entry_point_override(entry_point_name):
     """
@@ -28,10 +40,10 @@ def enable_entry_point_override(entry_point_name):
         @wraps(func)
         def inner(*args, **kwargs):
             entry_points = pkg_resources.iter_entry_points(entry_point_name)
-            for entry_point in entry_points:
-                ret = entry_point.load()(*args, **kwargs)
-                if ret is not None:
-                    return ret
-            return func(*args, **kwargs)
+
+            next_func = func
+            for entry_point in reversed(entry_points):
+                next_func = generate_next(entry_point.load(), next_func)
+            return next_func(*args, **kwargs)
         return inner
     return outer

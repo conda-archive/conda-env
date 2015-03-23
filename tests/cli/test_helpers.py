@@ -92,7 +92,8 @@ class EntryPointOverrideDecoratorTestCase(TestCase):
         def my_func():
             self.fail(msg="should never execute")
 
-        with mock_execute_entry_point() as custom_execute:
+        custom_execute = mock.Mock()
+        with mock_execute_entry_point(custom_execute):
             my_func()
 
         self.assertTrue(custom_execute.called)
@@ -102,7 +103,8 @@ class EntryPointOverrideDecoratorTestCase(TestCase):
         def my_func_with_args(one, two):
             self.fail(msg="should never execute")
 
-        with mock_execute_entry_point() as custom_execute:
+        custom_execute = mock.Mock()
+        with mock_execute_entry_point(custom_execute):
             expected_args = ["one", "two",
                              "random%d" % random.randint(100, 200)]
             my_func_with_args(*expected_args)
@@ -115,38 +117,39 @@ class EntryPointOverrideDecoratorTestCase(TestCase):
         def my_func_with_kwargs(one=1, two=2, random=r):
             self.fail(msg="should never execute")
 
-        with mock_execute_entry_point() as custom_execute:
-            expected_kwargs = {
+        custom_execute = mock.Mock()
+        with mock_execute_entry_point(custom_execute):
+            kwargs = {
                 "one": "one",
                 "two": "two",
                 "random": random.randint(100, 200),
             }
-            my_func_with_kwargs(**expected_kwargs)
-        custom_execute.assert_called_with(**expected_kwargs)
+            my_func_with_kwargs(**kwargs)
 
-    def test_returns_entry_point_value_on_not_none_return(self):
-        @helpers.enable_entry_point_override("foo")
-        def my_func():
-            pass
+        custom_execute.assert_called_with(**kwargs)
 
-        with mock_execute_entry_point() as custom_execute:
-            self.assertEqual(custom_execute.return_value, my_func())
-
-    def test_passes_to_decorated_func_if_entry_point_returns_none(self):
+    def test_can_capture_output_from_next(self):
         r = random.randint(1000, 2000)
+
+        def middleware(next=None, *args, **kwargs):
+            a = middleware.next(*args, **kwargs)
+            return a * a
 
         @helpers.enable_entry_point_override("foo")
         def my_func():
             return r
 
-        with mock_execute_entry_point() as custom_execute:
-            custom_execute.return_value = None
-            self.assertEqual(r, my_func())
+        with mock_execute_entry_point(middleware):
+            self.assertEqual(r * r, my_func(r))
 
 
 @contextmanager
-def mock_execute_entry_point():
-    custom_execute = mock.Mock(return_value="foobar")
+def mock_execute_entry_point(custom_execute=None):
+    if custom_execute is None:
+        def middleware(*args, **kwargs):
+            return "foobar"
+
+        custom_execute = middleware
     entry_point = mock.Mock()
     entry_point.load.return_value = custom_execute
 
