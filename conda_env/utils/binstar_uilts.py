@@ -50,7 +50,7 @@ def ensure_package_namespace(binstar, username, packagename, version=None, summa
         try:
             binstar.release(username, packagename, version)
         except errors.NotFound:
-            binstar.add_release(username, packagename, version)
+            binstar.add_release(username, packagename, version, {}, '', '')
 
 
 def download_environment_file(package_spec, filename, json=False):
