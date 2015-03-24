@@ -48,10 +48,10 @@ setup(
     ],
     entry_points={
         'conda_env.cli.main_create.configure_parser': [
-            'one = conda_env.cli.main_create:sub_parser',
+            'say = conda_env.cli.main_create:say_configure_parser',
         ],
         'conda_env.cli.main_create.execute': [
-            'one = conda_env.cli.main_create:sub_execute',
+            'say = conda_env.cli.main_create:say_execute',
         ]
     },
     scripts=[

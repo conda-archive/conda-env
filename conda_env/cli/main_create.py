@@ -30,14 +30,21 @@ examples:
 """
 
 
-def sub_parser(p):
-    print("sub_parser invoked")
-    return sub_parser.next(p)
+def say_configure_parser(sub_parsers):
+    p = say_configure_parser.next(sub_parsers)
+    p.add_argument('--say', action='store_true', default=False,
+                   help='say the name')
+    return p
 
 
-def sub_execute(args, parser):
-    print("sub_execute invoked")
-    return sub_execute.next(args, parser)
+def say_execute(args, parser):
+    if args.say:
+        if args.name:
+            print("you're about to create %s" % args.name)
+        else:
+            print("you're about to create an environment, but I don't know "
+                  "what the name is yet")
+    return say_execute.next(args, parser)
 
 
 @helpers.enable_entry_point_override(ENTRY_POINTS["configure_parser"])
