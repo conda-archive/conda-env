@@ -23,6 +23,7 @@ examples:
 """
 
 
+@helpers.enable_entry_point_override(ENTRY_POINTS["configure_parser"])
 def configure_parser(sub_parsers):
     p = sub_parsers.add_parser(
         'export',
@@ -46,6 +47,7 @@ def configure_parser(sub_parsers):
     )
 
     p.set_defaults(func=execute)
+    return p
 
 
 # TODO Make this aware of channels that were used to install packages

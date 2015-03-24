@@ -17,6 +17,7 @@ examples:
 """
 
 
+@helpers.enable_entry_point_override(ENTRY_POINTS["configure_parser"])
 def configure_parser(sub_parsers):
     l = sub_parsers.add_parser(
         'list',
@@ -29,6 +30,7 @@ def configure_parser(sub_parsers):
     common.add_parser_json(l)
 
     l.set_defaults(func=execute)
+    return l
 
 
 @helpers.enable_entry_point_override(ENTRY_POINTS["execute"])
