@@ -18,8 +18,6 @@ def generate_next(func, after):
         return after(*args, **kwargs)
 
     def wrapper(*args, **kwargs):
-        print("calling %s with args %s / kwargs %s" % (func, args, kwargs))
-
         func.next = next
         return func(*args, **kwargs)
     return wrapper
