@@ -40,7 +40,7 @@ setup(
         "Programming Language :: Python :: 3.3",
     ],
     description="tools for interacting with conda environments",
-    long_description=open('README.rst').read(),
+    long_description=open('README.rst', 'rb').read().decode('UTF-8'),
     packages=[
         'conda_env',
         'conda_env.cli',
