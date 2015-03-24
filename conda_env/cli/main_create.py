@@ -32,13 +32,15 @@ examples:
 
 def sub_parser(p):
     print("sub_parser invoked")
+    return sub_parser.next(p)
 
 
 def sub_execute(args, parser):
     print("sub_execute invoked")
-    return
+    return sub_execute.next(args, parser)
 
 
+@helpers.enable_entry_point_override(ENTRY_POINTS["configure_parser"])
 def configure_parser(sub_parsers):
     p = sub_parsers.add_parser(
         'create',
@@ -68,6 +70,7 @@ def configure_parser(sub_parsers):
     common.add_parser_json(p)
 
     p.set_defaults(func=execute)
+    return p
 
 
 @helpers.enable_entry_point_override(ENTRY_POINTS["execute"])
