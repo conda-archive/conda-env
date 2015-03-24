@@ -40,7 +40,7 @@ def enable_entry_point_override(entry_point_name):
             entry_points = pkg_resources.iter_entry_points(entry_point_name)
 
             next_func = func
-            for entry_point in reversed(entry_points):
+            for entry_point in reversed(list(entry_points)):
                 next_func = generate_next(entry_point.load(), next_func)
             return next_func(*args, **kwargs)
         return inner

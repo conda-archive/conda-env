@@ -153,8 +153,9 @@ def mock_execute_entry_point(custom_execute=None):
     entry_point = mock.Mock()
     entry_point.load.return_value = custom_execute
 
+    def mock_iter_entry_points(name):
+        yield entry_point
+
     with mock.patch.object(helpers, "pkg_resources") as pkg_resources:
-        pkg_resources.iter_entry_points = mock.Mock(
-            return_value=[entry_point]
-        )
+        pkg_resources.iter_entry_points = mock_iter_entry_points
         yield custom_execute
