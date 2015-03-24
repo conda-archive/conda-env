@@ -67,12 +67,6 @@ def configure_parser(sub_parsers):
     )
     common.add_parser_json(p)
 
-    entry_points = pkg_resources.iter_entry_points(
-        ENTRY_POINTS["configure_parser"]
-    )
-    for entry_point in entry_points:
-        entry_point.load()(p)
-
     p.set_defaults(func=execute)
 
 
