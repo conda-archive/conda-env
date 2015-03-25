@@ -5,12 +5,15 @@ from . import helpers
 
 # TODO Write tests
 class BaseCommand(object):
-    def get_entry_points(self, name):
-        entry_point_name = "{module}.{name}".format(
+    def get_entry_point_name(self, name):
+        return "{module}.{name}".format(
             module=self.__class__.__module__, name=name)
+
+    def get_entry_points(self, name):
+        entry_point_name = self.get_entry_point_name(name)
         return pkg_resources.iter_entry_points(entry_point_name)
 
-    def generate_entry_points(self, name):
+    def get_wrapped_function(self, name):
         entry_points = self.get_entry_points(name)
         func = getattr(self, name)
         for entry_point in reversed(list(entry_points)):
@@ -18,16 +21,14 @@ class BaseCommand(object):
         return func
 
     def setup(self, sub_parsers):
-        return self.generate_entry_points("configure_parser")(
+        return self.get_wrapped_function("configure_parser")(
             self, sub_parsers)
 
     def dispatch(self):
-        return self.generate_entry_points("execute")(self)
+        return self.get_wrapped_function("execute")(self)
 
     def configure_parser(self, sub_parsers):
-        # TODO Raise error
-        pass
+        raise NotImplementedError()
 
     def execute(self):
-        # TODO Raise NotYetImplemeneted
-        pass
+        raise NotImplementedError()
