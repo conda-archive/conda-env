@@ -30,8 +30,8 @@ examples:
 """
 
 
-def say_configure_parser(sub_parsers):
-    p = say_configure_parser.next(sub_parsers)
+def say_configure_parser(command, sub_parsers):
+    p = say_configure_parser.next(command, sub_parsers)
     p.add_argument('--say', action='store_true', default=False,
                    help='say the name')
     return p
@@ -47,45 +47,8 @@ def say_execute(command):
     return say_execute.next()
 
 
-@helpers.enable_entry_point_override(ENTRY_POINTS["configure_parser"])
-def configure_parser(sub_parsers):
-    p = sub_parsers.add_parser(
-        'create',
-        formatter_class=RawDescriptionHelpFormatter,
-        description=description,
-        help=description,
-        epilog=example,
-    )
-
-    p.add_argument(
-        '-n', '--name',
-        action='store',
-        help='name of environment (in %s)' % os.pathsep.join(config.envs_dirs),
-        default=None,
-    )
-
-    p.add_argument(
-        '-f', '--file',
-        action='store',
-        help='environment definition (default: environment.yml)',
-        default='environment.yml',
-    )
-    p.add_argument(
-        '-q', '--quiet',
-        default=False,
-    )
-    common.add_parser_json(p)
-
-    p.set_defaults(command=Command)
-    return p
-
-
 class BaseCommand(object):
     ENTRY_POINTS = helpers.generate_entry_points(__name__)
-
-    def __init__(self, args, parser):
-        self.args = args
-        self.parser = parser
 
     def dispatch(self, *args, **kwargs):
         entry_point_name = "{module}.{name}".format(
@@ -109,6 +72,38 @@ class Command(BaseCommand):
         super(Command, self).__init__(*args, **kwargs)
         self._env = None
         self._prefix = None
+
+    @helpers.enable_entry_point_override(ENTRY_POINTS["configure_parser"])
+    def configure_parser(self, sub_parsers):
+        p = sub_parsers.add_parser(
+            'create',
+            formatter_class=RawDescriptionHelpFormatter,
+            description=description,
+            help=description,
+            epilog=example,
+        )
+
+        p.add_argument(
+            '-n', '--name',
+            action='store',
+            help='name of environment (in %s)' % os.pathsep.join(config.envs_dirs),
+            default=None,
+        )
+
+        p.add_argument(
+            '-f', '--file',
+            action='store',
+            help='environment definition (default: environment.yml)',
+            default='environment.yml',
+        )
+        p.add_argument(
+            '-q', '--quiet',
+            default=False,
+        )
+        common.add_parser_json(p)
+
+        p.set_defaults(command=self)
+        return p
 
     @property
     def env(self):

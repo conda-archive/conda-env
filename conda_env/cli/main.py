@@ -47,7 +47,7 @@ def create_parser():
     p = argparse.ArgumentParser()
     sub_parsers = p.add_subparsers()
 
-    main_create.configure_parser(sub_parsers)
+    main_create.Command().configure_parser(sub_parsers)
     main_export.configure_parser(sub_parsers)
     main_list.configure_parser(sub_parsers)
     main_remove.configure_parser(sub_parsers)
@@ -63,7 +63,9 @@ def main():
     if getattr(args, "command", False) is False:
         # Legacy system
         return args_func(args, parser)
-    command = args.command(args, parser)
+    command = args.command
+    command.args = args
+    command.parser = parser
     return command.dispatch()
 
 
