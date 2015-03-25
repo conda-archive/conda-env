@@ -50,7 +50,7 @@ setup(
         'conda_env.cli.main_create.configure_parser': [
             'say = conda_env.cli.main_create:say_configure_parser',
         ],
-        'conda_env.cli.main_create.execute': [
+        'conda_env.cli.main_create.Command': [
             'say = conda_env.cli.main_create:say_execute',
         ]
     },
