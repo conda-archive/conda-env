@@ -31,7 +31,7 @@ examples:
 
 
 def say_configure_parser(command, sub_parsers):
-    p = say_configure_parser.next(command, sub_parsers)
+    p = say_configure_parser.next(sub_parsers)
     p.add_argument('--say', action='store_true', default=False,
                    help='say the name')
     return p
@@ -50,19 +50,30 @@ def say_execute(command):
 class BaseCommand(object):
     ENTRY_POINTS = helpers.generate_entry_points(__name__)
 
-    def dispatch(self, *args, **kwargs):
+    def get_entry_points(self, name):
         entry_point_name = "{module}.{name}".format(
-            module=self.__class__.__module__,
-            name=self.__class__.__name__
-        )
-        entry_points = pkg_resources.iter_entry_points(entry_point_name)
+            module=self.__class__.__module__, name=name)
+        return pkg_resources.iter_entry_points(entry_point_name)
 
-        next_func = self.run
+    def generate_entry_points(self, name):
+        entry_points = self.get_entry_points(name)
+        func = getattr(self, name)
         for entry_point in reversed(list(entry_points)):
-            next_func = helpers.generate_next(entry_point.load(), next_func)
-        return next_func(self, *args, **kwargs)
+            func = helpers.generate_next(entry_point.load(), func)
+        return func
 
-    def run(self):
+    def setup(self, sub_parsers):
+        return self.generate_entry_points("configure_parser")(
+            self, sub_parsers)
+
+    def dispatch(self):
+        return self.generate_entry_points("execute")(self)
+
+    def configure_parser(self, sub_parsers):
+        # TODO Raise error
+        pass
+
+    def execute(self):
         # TODO Raise NotYetImplemeneted
         pass
 
@@ -73,7 +84,6 @@ class Command(BaseCommand):
         self._env = None
         self._prefix = None
 
-    @helpers.enable_entry_point_override(ENTRY_POINTS["configure_parser"])
     def configure_parser(self, sub_parsers):
         p = sub_parsers.add_parser(
             'create',
@@ -86,7 +96,8 @@ class Command(BaseCommand):
         p.add_argument(
             '-n', '--name',
             action='store',
-            help='name of environment (in %s)' % os.pathsep.join(config.envs_dirs),
+            help='name of environment (in %s)' % os.pathsep.join(
+                config.envs_dirs),
             default=None,
         )
 
@@ -147,7 +158,7 @@ class Command(BaseCommand):
             self._prefix = prefix
         return self._prefix
 
-    def run(self):
+    def execute(self):
         # FIXME Make sure that this isn't required by fixing Conda
         self.name
 
@@ -180,59 +191,3 @@ class Command(BaseCommand):
         cli_install.print_activate(
             self.args.name if self.args.name else self.prefix
         )
-
-
-@helpers.enable_entry_point_override(ENTRY_POINTS["execute"])
-def execute(args, parser):
-    try:
-        env = from_file(args.file)
-    except exceptions.EnvironmentFileNotFound as e:
-        msg = 'Unable to locate environment file: %s\n\n' % e.filename
-        msg += "\n".join(textwrap.wrap(textwrap.dedent("""
-            Please verify that the above file is present and that you have
-            permission read the file's contents.  Note, you can specify the
-            file to use by explictly adding --file=/path/to/file when calling
-            conda env create.""").lstrip()))
-
-        common.error_and_exit(msg, json=args.json)
-
-    if not args.name:
-        if not env.name:
-            # TODO It would be nice to be able to format this more cleanly
-            common.error_and_exit(
-                'An environment name is required.\n\n'
-                'You can either specify one directly with --name or you can add\n'
-                'a name property to your %s file.' % args.file,
-                json=args.json
-            )
-        # Note: stubbing out the args object as all of the
-        # conda.cli.common code thinks that name will always
-        # be specified.
-        args.name = env.name
-
-    prefix = common.get_prefix(args, search=False)
-    cli_install.check_prefix(prefix, json=args.json)
-
-    # TODO, add capability
-    # common.ensure_override_channels_requires_channel(args)
-    # channel_urls = args.channel or ()
-
-    for installer_type, specs in env.dependencies.items():
-        try:
-            installer = get_installer(installer_type)
-            installer.install(prefix, specs, args, env)
-        except InvalidInstaller:
-            sys.stderr.write(textwrap.dedent("""
-                Unable to install package for {0}.
-
-                Please double check and ensure you dependencies file has
-                the correct spelling.  You might also try installing the
-                conda-env-{0} package to see if provides the required
-                installer.
-                """).lstrip().format(installer_type)
-            )
-            return -1
-
-    touch_nonadmin(prefix)
-    if not args.json:
-        cli_install.print_activate(args.name if args.name else prefix)
