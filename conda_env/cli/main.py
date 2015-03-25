@@ -60,7 +60,11 @@ def create_parser():
 def main():
     parser = create_parser()
     args = parser.parse_args()
-    return args_func(args, parser)
+    if getattr(args, "command", False) is False:
+        # Legacy system
+        return args_func(args, parser)
+    command = args.command(args, parser)
+    return command.dispatch()
 
 
 if __name__ == '__main__':
