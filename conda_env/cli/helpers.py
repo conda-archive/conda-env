@@ -2,6 +2,7 @@ from functools import wraps
 import pkg_resources
 
 
+# FIXME Should be removed in favor of class-based approach
 # TODO Extract to third-party package
 def generate_entry_points(name):
     """
@@ -23,6 +24,7 @@ def generate_next(func, after):
     return wrapper
 
 
+# FIXME Should be removed in favor of class-based approach
 # TODO Extract to third-party package
 def enable_entry_point_override(entry_point_name):
     """

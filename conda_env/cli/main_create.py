@@ -14,6 +14,7 @@ from ..env import from_file
 from ..installers.base import get_installer, InvalidInstaller
 from .. import exceptions
 from . import helpers
+from . import base
 
 ENTRY_POINTS = helpers.generate_entry_points(__name__)
 
@@ -47,38 +48,7 @@ def say_execute(command):
     return say_execute.next()
 
 
-class BaseCommand(object):
-    ENTRY_POINTS = helpers.generate_entry_points(__name__)
-
-    def get_entry_points(self, name):
-        entry_point_name = "{module}.{name}".format(
-            module=self.__class__.__module__, name=name)
-        return pkg_resources.iter_entry_points(entry_point_name)
-
-    def generate_entry_points(self, name):
-        entry_points = self.get_entry_points(name)
-        func = getattr(self, name)
-        for entry_point in reversed(list(entry_points)):
-            func = helpers.generate_next(entry_point.load(), func)
-        return func
-
-    def setup(self, sub_parsers):
-        return self.generate_entry_points("configure_parser")(
-            self, sub_parsers)
-
-    def dispatch(self):
-        return self.generate_entry_points("execute")(self)
-
-    def configure_parser(self, sub_parsers):
-        # TODO Raise error
-        pass
-
-    def execute(self):
-        # TODO Raise NotYetImplemeneted
-        pass
-
-
-class Command(BaseCommand):
+class Command(base.BaseCommand):
     def __init__(self, *args, **kwargs):
         super(Command, self).__init__(*args, **kwargs)
         self._env = None
