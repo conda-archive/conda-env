@@ -23,7 +23,7 @@ Upload an environment to binstar
 
 example = """
 examples:
-    conda env upload 
+    conda env upload
     conda env upload -n=foo
     conda env upload -f=/path/to/environment.yml
     conda env upload --name=foo --file=environment.yml
@@ -124,7 +124,7 @@ def execute(args, parser):
 
     binstar = get_binstar()
 
-    user = binstar_uilts.ensure_loggedin(binstar)
+    user = binstar_utils.ensure_loggedin(binstar)
 
     if not args.user:
         args.user = user['login']
