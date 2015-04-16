@@ -13,7 +13,7 @@ from .. import exceptions
 try:
     from binstar_client.utils import get_binstar
     from binstar_client import errors as binstar_errors
-    from ..utils import binstar_uilts
+    from conda_env.utils import binstar as binstar_utils
 except ImportError:
     get_binstar = None
 
@@ -132,7 +132,7 @@ def execute(args, parser):
     if not args.summary:
         args.summary = env_data.get('summary')
 
-    binstar_uilts.ensure_package_namespace(binstar,
+    binstar_utils.ensure_package_namespace(binstar,
                                            args.user, args.name, args.version,
                                            args.summary)
 
@@ -155,7 +155,7 @@ def execute(args, parser):
 
     binstar.upload(args.user, args.name, args.version,
                    basename, open(args.file),
-                   distribution_type=binstar_uilts.ENVIRONMENT_TYPE,
+                   distribution_type=binstar_utils.ENVIRONMENT_TYPE,
                    attrs=env_data)
 
     print("done")

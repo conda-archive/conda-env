@@ -12,9 +12,9 @@ from ..env import from_file
 from ..installers.base import get_installer, InvalidInstaller
 from .. import exceptions
 try:
-    from ..utils import binstar_uilts
+    from conda_env.utils import binstar as binstar_utils
 except:
-    binstar_uilts = None
+    binstar_utils = None
 
 description = """
 Create an environment based on an environment file
@@ -68,12 +68,12 @@ def execute(args, parser):
 
     if args.binstar:
 
-        if binstar_uilts is None:
+        if binstar_utils is None:
             common.error_and_exit('The binstar command line client is required '
                                   'to be installed to use the --binstar option',
                                   json=args.json)
         # Fetch file from binstar and write to args.file
-        binstar_uilts.download_environment_file(args.binstar, args.file, args.json)
+        binstar_utils.download_environment_file(args.binstar, args.file, args.json)
 
     try:
         env = from_file(args.file)
