@@ -13,7 +13,7 @@ from ..installers.base import get_installer, InvalidInstaller
 from .. import exceptions
 try:
     from conda_env.utils import binstar as binstar_utils
-except:
+except ImportError:
     binstar_utils = None
 
 description = """
