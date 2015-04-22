@@ -7,6 +7,13 @@ class NoBinstar(CondaEnvException):
         msg = 'The binstar must be installed to perform this action'
         super(NoBinstar, self).__init__(msg)
 
+
+class AlreadyExist(CondaEnvException):
+    def __init__(self):
+        msg = 'The environment path already exists'
+        super(AlreadyExist, self).__init__(msg)
+
+
 class EnvironmentFileNotFound(CondaEnvException):
     def __init__(self, filename, *args, **kwargs):
         msg = '{} file not found'.format(filename)

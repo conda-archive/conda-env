@@ -6,16 +6,8 @@ from conda import config
 from conda.cli import common
 
 from ..env import from_file
-from .. import exceptions
-
-
-# Raise an appropriate error later only if conda-env upload is called
-try:
-    from binstar_client.utils import get_binstar
-    from binstar_client import errors as binstar_errors
-    from conda_env.utils import binstar as binstar_utils
-except ImportError:
-    get_binstar = None
+from conda_env.utils.uploader import Uploader
+from conda_env import exceptions
 
 description = """
 Upload an environment to binstar
@@ -28,6 +20,7 @@ examples:
     conda env upload -f=/path/to/environment.yml
     conda env upload --name=foo --file=environment.yml
 """
+
 
 def configure_parser(sub_parsers):
     p = sub_parsers.add_parser(
@@ -78,7 +71,7 @@ def configure_parser(sub_parsers):
 
 def execute(args, parser):
 
-    if get_binstar is None:
+    if not Uploader.is_installed():
         raise exceptions.NoBinstar()
 
     try:
@@ -122,42 +115,25 @@ def execute(args, parser):
     elif not args.version:
         args.version = env_data['version']
 
-    binstar = get_binstar()
-
-    user = binstar_utils.ensure_loggedin(binstar)
-
-    if not args.user:
-        args.user = user['login']
-
     if not args.summary:
         args.summary = env_data.get('summary')
 
-    binstar_utils.ensure_package_namespace(binstar,
-                                           args.user, args.name, args.version,
-                                           args.summary)
+    binstar_uploader = Uploader(name=args.name,
+                                file=args.file,
+                                version=args.version,
+                                summary=args.summary,
+                                username=args.user,
+                                force=args.force,
+                                env_data=env_data)
 
-    basename = os.path.basename(args.file)
-    print("Uploading environment %s to anaconda-server (%s)... " % (args.name, binstar.domain))
     try:
-        binstar.distribution(args.user, args.name, args.version, basename)
-    except binstar_errors.NotFound:
-        pass
-    else:
-        if args.force:
-            binstar.remove_dist(args.user, args.name, args.version, basename)
-        else:
-            env_path = "%s/%s/%s/%s" % (args.user, args.name, args.version, basename)
-            common.error_and_exit(
-                'The environment path %s already exists on binstar \n\n'
-                'If you want to overwrite this file use the --force option' % (env_path),
-                json=args.json
-            )
-
-    binstar.upload(args.user, args.name, args.version,
-                   basename, open(args.file),
-                   distribution_type=binstar_utils.ENVIRONMENT_TYPE,
-                   attrs=env_data)
+        binstar_uploader.upload()
+    except exceptions.AlreadyExist:
+        env_path = binstar_uploader.env_path()
+        common.error_and_exit(
+            'The environment path %s already exists on binstar \n\n'
+            'If you want to overwrite this file use the --force option' % env_path,
+            json=args.json
+        )
 
     print("done")
-
-
