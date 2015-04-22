@@ -29,7 +29,7 @@ class Uploader(object):
         is Binstar-cli installed?
         :return: True/False
         """
-        return get_binstar is None
+        return get_binstar is not None
 
     def __init__(self, name, file, version, summary, username=None, force=False, env_data={}):
         self.binstar = get_binstar()
@@ -37,12 +37,14 @@ class Uploader(object):
         self.packagename = name
         self.version = version
         self.summary = summary
-        if username is None:
-            self.username = self.user['login']
         self.force = force
         self.file = file
         self.basename = os.path.basename(file)
         self.env_data = env_data
+        if username is not None:
+            self.username = username
+        else:
+            self.username = self.user['login']
 
     def upload(self):
         """
@@ -75,7 +77,7 @@ class Uploader(object):
             return True
         else:
             if self.force:
-                self.binstar.remove_dist(self.user, self.packagename, self.version, self.basename)
+                self.binstar.remove_dist(self.username, self.packagename, self.version, self.basename)
             return False
 
     def ensure_package_namespace(self):
