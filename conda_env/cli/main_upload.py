@@ -6,7 +6,7 @@ from conda import config
 from conda.cli import common
 
 from ..env import from_file
-from conda_env.utils.uploader import Uploader
+from conda_env.utils.uploader import Uploader, is_installed
 from conda_env import exceptions
 
 description = """
@@ -71,7 +71,7 @@ def configure_parser(sub_parsers):
 
 def execute(args, parser):
 
-    if not Uploader.is_installed():
+    if not is_installed():
         raise exceptions.NoBinstar()
 
     try:

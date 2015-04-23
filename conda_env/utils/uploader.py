@@ -16,20 +16,20 @@ ENVIRONMENT_TYPE = 'env'
 binstar_args = namedtuple('binstar_args', ['site', 'token'])
 
 
+def is_installed():
+    """
+    is Binstar-cli installed?
+    :return: True/False
+    """
+    return get_binstar is not None
+
+
 class Uploader(object):
     """
     Upload environments to Binstar
     """
 
     user = None
-
-    @staticmethod
-    def is_installed():
-        """
-        is Binstar-cli installed?
-        :return: True/False
-        """
-        return get_binstar is not None
 
     def __init__(self, name, file, version, summary, username=None, force=False, env_data={}):
         self.binstar = get_binstar()
