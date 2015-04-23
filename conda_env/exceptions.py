@@ -4,7 +4,7 @@ class CondaEnvException(Exception):
 
 class NoBinstar(CondaEnvException):
     def __init__(self):
-        msg = 'The binstar must be installed to perform this action'
+        msg = 'The binstar client must be installed to perform this action'
         super(NoBinstar, self).__init__(msg)
 
 
