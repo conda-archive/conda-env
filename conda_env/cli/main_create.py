@@ -3,6 +3,8 @@ import os
 import textwrap
 import sys
 
+import pkg_resources
+
 from conda import config
 from conda.cli import common
 from conda.cli import install as cli_install
@@ -11,6 +13,9 @@ from conda.misc import touch_nonadmin
 from ..env import from_file
 from ..installers.base import get_installer, InvalidInstaller
 from .. import exceptions
+from . import helpers
+
+ENTRY_POINTS = helpers.generate_entry_points(__name__)
 
 description = """
 Create an environment based on an environment file
@@ -25,6 +30,24 @@ examples:
 """
 
 
+def say_configure_parser(sub_parsers):
+    p = say_configure_parser.next(sub_parsers)
+    p.add_argument('--say', action='store_true', default=False,
+                   help='say the name')
+    return p
+
+
+def say_execute(args, parser):
+    if args.say:
+        if args.name:
+            print("you're about to create %s" % args.name)
+        else:
+            print("you're about to create an environment, but I don't know "
+                  "what the name is yet")
+    return say_execute.next(args, parser)
+
+
+@helpers.enable_entry_point_override(ENTRY_POINTS["configure_parser"])
 def configure_parser(sub_parsers):
     p = sub_parsers.add_parser(
         'create',
@@ -52,9 +75,12 @@ def configure_parser(sub_parsers):
         default=False,
     )
     common.add_parser_json(p)
+
     p.set_defaults(func=execute)
+    return p
 
 
+@helpers.enable_entry_point_override(ENTRY_POINTS["execute"])
 def execute(args, parser):
     try:
         env = from_file(args.file)
@@ -108,4 +134,3 @@ def execute(args, parser):
     touch_nonadmin(prefix)
     if not args.json:
         cli_install.print_activate(args.name if args.name else prefix)
-

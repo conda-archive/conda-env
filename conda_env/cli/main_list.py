@@ -2,6 +2,10 @@ from argparse import RawDescriptionHelpFormatter
 
 from conda.cli import common
 
+from . import helpers
+
+ENTRY_POINTS = helpers.generate_entry_points(__name__)
+
 description = """
 List the Conda environments
 """
@@ -13,6 +17,7 @@ examples:
 """
 
 
+@helpers.enable_entry_point_override(ENTRY_POINTS["configure_parser"])
 def configure_parser(sub_parsers):
     l = sub_parsers.add_parser(
         'list',
@@ -25,8 +30,10 @@ def configure_parser(sub_parsers):
     common.add_parser_json(l)
 
     l.set_defaults(func=execute)
+    return l
 
 
+@helpers.enable_entry_point_override(ENTRY_POINTS["execute"])
 def execute(args, parser):
     info_dict = {'envs': []}
     common.handle_envs_list(info_dict['envs'], not args.json)

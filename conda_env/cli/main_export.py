@@ -8,6 +8,9 @@ from conda.cli import common
 from conda import config
 
 from ..env import from_environment
+from . import helpers
+
+ENTRY_POINTS = helpers.generate_entry_points(__name__)
 
 description = """
 Export a given environment
@@ -20,6 +23,7 @@ examples:
 """
 
 
+@helpers.enable_entry_point_override(ENTRY_POINTS["configure_parser"])
 def configure_parser(sub_parsers):
     p = sub_parsers.add_parser(
         'export',
@@ -43,9 +47,11 @@ def configure_parser(sub_parsers):
     )
 
     p.set_defaults(func=execute)
+    return p
 
 
 # TODO Make this aware of channels that were used to install packages
+@helpers.enable_entry_point_override(ENTRY_POINTS["execute"])
 def execute(args, parser):
     if not args.name:
         # Note, this is a hack fofr get_prefix that assumes argparse results

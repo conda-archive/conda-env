@@ -11,6 +11,9 @@ from conda.misc import touch_nonadmin
 from ..env import from_file
 from ..installers.base import get_installer, InvalidInstaller
 from .. import exceptions
+from . import helpers
+
+ENTRY_POINTS = helpers.generate_entry_points(__name__)
 
 description = """
 Update the current environment based on environment file
@@ -24,6 +27,7 @@ examples:
     conda env update --name=foo --file=environment.yml
 """
 
+@helpers.enable_entry_point_override(ENTRY_POINTS["configure_parser"])
 def configure_parser(sub_parsers):
     p = sub_parsers.add_parser(
         'update',
@@ -52,8 +56,10 @@ def configure_parser(sub_parsers):
     )
     common.add_parser_json(p)
     p.set_defaults(func=execute)
+    return p
 
 
+@helpers.enable_entry_point_override(ENTRY_POINTS["execute"])
 def execute(args, parser):
     try:
         env = from_file(args.file)
