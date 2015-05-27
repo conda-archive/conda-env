@@ -1,7 +1,6 @@
 from collections import OrderedDict
 import os
 import random
-import textwrap
 import unittest
 import yaml
 
@@ -203,6 +202,16 @@ class EnvironmentTestCase(unittest.TestCase):
         self.assert_(not 'bar' in e.dependencies['conda'])
         e.dependencies.add('bar')
         self.assert_('bar' in e.dependencies['conda'])
+
+
+    def test_activate(self):
+        e = env.Environment(activate=['script.sh'])
+        self.assertEqual(['script.sh'], e.activate)
+
+
+    def test_deactivate(self):
+        e = env.Environment(deactivate=['script.sh'])
+        self.assertEqual(['script.sh'], e.deactivate)
 
 
 class DirectoryTestCase(unittest.TestCase):
