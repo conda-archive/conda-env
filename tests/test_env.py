@@ -198,6 +198,25 @@ class EnvironmentTestCase(unittest.TestCase):
         ])
         self.assertEqual(expected, s.output)
 
+    def test_can_add_dependencies_dict_to_environment(self):
+        e = get_simple_environment()
+        e.dependencies.add({'pip' : ['foo']})
+        e.dependencies.add({'pip' : ['bar']})
+
+        s = FakeStream()
+        e.to_yaml(stream=s)
+
+        expected = "\n".join([
+            'name: nlp',
+            'dependencies:',
+            '- nltk',
+            '- pip:',
+            '  - foo',
+            '  - bar',
+            ''
+        ])
+        self.assertEqual(expected, s.output)
+
     def test_dependencies_update_after_adding(self):
         e = get_simple_environment()
         self.assert_(not 'bar' in e.dependencies['conda'])

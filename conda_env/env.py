@@ -75,7 +75,21 @@ class Dependencies(OrderedDict):
 
     # TODO only append when it's not already present
     def add(self, package_name):
-        self.raw.append(package_name)
+        """Adds a package or dict of packages to ``self.raw``"""
+        if type(package_name) is not dict:
+            self.raw.append(package_name)
+        else:
+            # Look for the same dict in self.raw. This assumes that dicts being added only have
+            # a single key, e.g., 'pip'
+            package_dict_name = package_name.keys()[0]
+
+            for line in self.raw:
+                if type(line) is dict and package_dict_name in line:
+                    line[package_dict_name] += package_name[package_dict_name]
+                    break
+            else:
+                # If same dict is not found, just add it
+                self.raw.append(package_name)
         self.parse()
 
 
