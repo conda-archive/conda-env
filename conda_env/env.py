@@ -81,14 +81,21 @@ class Dependencies(OrderedDict):
 
 class Environment(object):
     def __init__(self, name=None, filename=None, channels=None,
-                 dependencies=None):
+                 dependencies=None, activate=None, deactivate=None):
         self.name = name
         self.filename = filename
         self.dependencies = Dependencies(dependencies)
 
-        if channels is None:
-            channels = []
-        self.channels = channels
+        def abspath(path):
+            """Obtain an absolute path for ``path`` assuming it is relative to ``filename``"""
+            if filename is None or os.path.isabs(path):
+                return path
+            return os.path.abspath(os.path.join(os.path.dirname(filename), path))
+
+        self.channels = channels or []
+        self.dependencies = Dependencies(dependencies or [])
+        self.activate = map(abspath, activate or [])
+        self.deactivate = map(abspath, deactivate or [])
 
     def to_dict(self):
         d = yaml.dict([('name', self.name)])
@@ -96,6 +103,10 @@ class Environment(object):
             d['channels'] = self.channels
         if self.dependencies:
             d['dependencies'] = self.dependencies.raw
+        if self.activate:
+            d['activate'] = self.activate
+        if self.deactivate:
+            d['deactivate'] = self.deactivate
         return d
 
     def to_yaml(self, stream=None):

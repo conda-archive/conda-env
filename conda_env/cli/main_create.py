@@ -105,6 +105,25 @@ def execute(args, parser):
             )
             return -1
 
+
+    # TODO should _link be moved to conda.misc?
+    # Use soft links to allow 'activate' scripts to obtain paths relative to its location
+    from conda.install import _link, LINK_SOFT
+
+    # Link activate scripts
+    if env.activate:
+        activate_dir = os.path.join(prefix, 'etc', 'conda', 'activate.d')
+        if not os.path.isdir(activate_dir): os.makedirs(activate_dir)
+        for i, activate_script in enumerate(env.activate):
+            _link(activate_script, os.path.join(activate_dir, '%s.sh' % i), LINK_SOFT)
+
+    # Link deactivate scripts
+    if env.deactivate:
+        deactivate_dir = os.path.join(prefix, 'etc', 'conda', 'deactivate.d')
+        if not os.path.isdir(deactivate_dir): os.makedirs(deactivate_dir)
+        for i, deactivate_script in enumerate(env.deactivate):
+            _link(deactivate_script, os.path.join(deactivate_dir, '%s.sh' % i), LINK_SOFT)
+
     touch_nonadmin(prefix)
     if not args.json:
         cli_install.print_activate(args.name if args.name else prefix)
