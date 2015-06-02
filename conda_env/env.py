@@ -89,14 +89,13 @@ class Dependencies(OrderedDict):
 
 class Environment(object):
     def __init__(self, name=None, filename=None, channels=None,
-                 dependencies=None):
+                 dependencies=None, environment=None, aliases=None):
         self.name = name
         self.filename = filename
         self.dependencies = Dependencies(dependencies)
-
-        if channels is None:
-            channels = []
-        self.channels = channels
+        self.channels = channels or []
+        self.environment = environment or {}
+        self.aliases = aliases or {}
 
     def to_dict(self):
         d = yaml.dict([('name', self.name)])
@@ -104,6 +103,10 @@ class Environment(object):
             d['channels'] = self.channels
         if self.dependencies:
             d['dependencies'] = self.dependencies.raw
+        if self.environment:
+            d['environment'] = self.environment
+        if self.aliases:
+            d['aliases'] = self.aliases
         return d
 
     def to_yaml(self, stream=None):

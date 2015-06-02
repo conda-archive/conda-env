@@ -62,7 +62,6 @@ def configure_parser(sub_parsers):
 
 
 def execute(args, parser):
-
     name = None
     if args.old_name:
         print("--name is deprecated. Use the following command instead:\n"
@@ -103,6 +102,51 @@ def execute(args, parser):
             )
             return -1
 
+    write_activate_deactivate(env, prefix)
+
     touch_nonadmin(prefix)
     if not args.json:
         cli_install.print_activate(args.name if args.name else prefix)
+
+
+def write_activate_deactivate(env, prefix):
+    '''Write activate/deactivate environment variable/aliases scripts'''
+    if not env.environment and not env.aliases:
+        return
+
+    # Create directories
+    conda_dir = os.path.join(prefix, 'etc', 'conda')
+    activate_dir = os.path.join(conda_dir, 'activate.d')
+    deactivate_dir = os.path.join(conda_dir, 'deactivate.d')
+    for directory in [conda_dir, activate_dir, deactivate_dir]:
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
+    # Copy print_env.py
+    import shutil
+    shutil.copyfile(
+        os.path.join(os.path.dirname(__file__), '..', 'print_env.py'),
+        os.path.join(conda_dir, 'print_env.py'),
+    )
+
+    # Create activate and deactivate scripts
+    if sys.platform == 'win32':
+        ext = '.bat'
+        source = 'call'
+        rm = 'del'
+    else:
+        ext = '.sh'
+        source = 'source'
+        rm = 'rm'
+
+    with open(os.path.join(activate_dir, '_activate' + ext), 'w') as activate:
+        activate.write('python "%s" activate "%s" "%s" > _tmp_activate%s\n' % \
+            (os.path.join(conda_dir, 'print_env.py'), repr(env.environment), repr(env.aliases), ext))
+        activate.write(source + ' _tmp_activate%s\n' % ext)
+        activate.write(rm + ' _tmp_activate%s\n' % ext)
+
+    with open(os.path.join(deactivate_dir, '_deactivate' + ext), 'w') as deactivate:
+        deactivate.write('python "%s" deactivate "%s" "%s" > _tmp_deactivate%s\n' % \
+            (os.path.join(conda_dir, 'print_env.py'), repr(env.environment), repr(env.aliases), ext))
+        deactivate.write(source + ' _tmp_deactivate%s\n' % ext)
+        deactivate.write(rm + ' _tmp_deactivate%s\n' % ext)
