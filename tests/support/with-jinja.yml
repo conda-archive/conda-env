@@ -1,0 +1,9 @@
+name: with_jinja
+
+dependencies:
+{% for i in ['xunit', 'coverage','mock'] %}
+  - pytest-{{ i }}
+{% endfor %}
+
+environment:
+  PYTHON_DIR: {{ os.path.join(root, 'python') }}

@@ -49,3 +49,12 @@ class InvalidLoader(Exception):
     def __init__(self, name):
         msg = 'Unable to load installer for {}'.format(name)
         super(InvalidLoader, self).__init__(msg)
+
+
+# TODO: This is copied from conda_build. Could yaml parsing from both libraries
+# be merged instead of duplicated? This could include jinja2 and "# [unix]" flags.
+class UnableToParseMissingJinja2(CondaEnvRuntimeError):
+    def __init__(self, *args, **kwargs):
+        msg = 'It appears you are missing jinja2.  Please install that ' + \
+            'package, then attempt to create the environment.'
+        super(UnableToParseMissingJinja2, self).__init__(msg, *args, **kwargs)

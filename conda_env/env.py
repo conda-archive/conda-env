@@ -46,9 +46,37 @@ def from_environment(name, prefix):
     return Environment(name=name, dependencies=dependencies)
 
 
+# TODO: This is duplicated from conda_build. Could yaml parsing from both libraries
+# be merged instead of duplicated? This could include jinja2 and "# [unix]" flags.
+def render_jinja(content, **kwargs):
+    try:
+        import jinja2
+    except ImportError:
+        return content
+
+    # Add {{ root }} to render dict
+    if 'filename' in kwargs:
+        kwargs['root'] = os.path.dirname(os.path.abspath(kwargs['filename']))
+
+    # Add {{ os }} to render dict
+    kwargs['os'] = os
+
+    return jinja2.Template(content).render(**kwargs)
+
+
 def from_yaml(yamlstr, **kwargs):
     """Load and return a ``Environment`` from a given ``yaml string``"""
-    data = yaml.load(yamlstr)
+    yamlstr = render_jinja(yamlstr, **kwargs)
+
+    try:
+        data = yaml.load(yamlstr)
+    except yaml.parser.ParserError:
+        try:
+            import jinja2
+        except ImportError:
+            raise exceptions.UnableToParseMissingJinja2()
+        raise
+
     if kwargs is not None:
         for key, value in kwargs.items():
             data[key] = value

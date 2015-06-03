@@ -42,6 +42,11 @@ class from_file_TestCase(unittest.TestCase):
         self.assert_('foo' in e.dependencies['pip'])
         self.assert_('baz' in e.dependencies['pip'])
 
+    def test_with_jinja(self):
+        e = env.from_file(utils.support_file('with-jinja.yml'))
+        self.assertEqual(e.dependencies.raw, ['pytest-xunit', 'pytest-coverage', 'pytest-mock'])
+        self.assertEqual(e.environment['PYTHON_DIR'], os.path.abspath(utils.support_file('python')))
+
 
 class EnvironmentTestCase(unittest.TestCase):
     def test_has_empty_filename_by_default(self):
