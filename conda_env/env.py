@@ -46,9 +46,37 @@ def from_environment(name, prefix):
     return Environment(name=name, dependencies=dependencies)
 
 
+# TODO: This is duplicated from conda_build. Could yaml parsing from both libraries
+# be merged instead of duplicated? This could include jinja2 and "# [unix]" flags.
+def render_jinja(content, **kwargs):
+    try:
+        import jinja2
+    except ImportError:
+        return content
+
+    # Add {{ root }} to render dict
+    if 'filename' in kwargs:
+        kwargs['root'] = os.path.dirname(os.path.abspath(kwargs['filename']))
+
+    # Add {{ os }} to render dict
+    kwargs['os'] = os
+
+    return jinja2.Template(content).render(**kwargs)
+
+
 def from_yaml(yamlstr, **kwargs):
     """Load and return a ``Environment`` from a given ``yaml string``"""
-    data = yaml.load(yamlstr)
+    yamlstr = render_jinja(yamlstr, **kwargs)
+
+    try:
+        data = yaml.load(yamlstr)
+    except yaml.parser.ParserError:
+        try:
+            import jinja2
+        except ImportError:
+            raise exceptions.UnableToParseMissingJinja2()
+        raise
+
     if kwargs is not None:
         for key, value in kwargs.items():
             data[key] = value
@@ -89,14 +117,13 @@ class Dependencies(OrderedDict):
 
 class Environment(object):
     def __init__(self, name=None, filename=None, channels=None,
-                 dependencies=None):
+                 dependencies=None, environment=None, aliases=None):
         self.name = name
         self.filename = filename
         self.dependencies = Dependencies(dependencies)
-
-        if channels is None:
-            channels = []
-        self.channels = channels
+        self.channels = channels or []
+        self.environment = environment or {}
+        self.aliases = aliases or {}
 
     def to_dict(self):
         d = yaml.dict([('name', self.name)])
@@ -104,6 +131,10 @@ class Environment(object):
             d['channels'] = self.channels
         if self.dependencies:
             d['dependencies'] = self.dependencies.raw
+        if self.environment:
+            d['environment'] = self.environment
+        if self.aliases:
+            d['aliases'] = self.aliases
         return d
 
     def to_yaml(self, stream=None):

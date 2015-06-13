@@ -73,3 +73,84 @@ in your local package cache.
 
 You can explicitly provide an environment spec file using ``-f`` or ``--file``
 and the name of the file you would like to use.
+
+
+``environment.yml`` jinja2 rendering
+------------------------------------
+
+If you have ``jinja2`` available in the environment, ``environment.yml`` files will be
+rendered with it before processing.
+
+.. code-block:: yaml
+
+    name: pytest
+    dependencies:
+    {% for i in ['xunit', 'coverage','mock'] %}
+      - pytest-{{ i }}
+    {% endfor %}
+
+In this example, the previous file with ``jinja2`` syntax is equivalent to:
+
+.. code-block:: yaml
+
+    name: pytest
+    dependencies:
+      - pytest-xunit
+      - pytest-coverage
+      - pytest-mock
+
+Available variables
+^^^^^^^^^^^^^^^^^^^
+
+When using ``jinja2``, on top of the usual template capabilities, you have access to the
+following variables:
+
+- ``root``: The directory containing ``environment.yml``
+- ``os``: Python's ``os`` module.
+
+
+``environment.yml`` examples
+----------------------------
+
+Name and dependencies
+^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: yaml
+
+    name: stats
+    dependencies:
+      - numpy
+      - pandas
+
+Name and version specific dependencies
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: yaml
+
+    name: stats
+    dependencies:
+      - numpy==1.8
+      - pandas==0.16.1
+
+
+Environment/aliases
+^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: yaml
+
+    name: oracle
+    dependencies:
+      - oracle_instantclient
+
+    # List type environment variables will be joined with os.pathsep (':' in unix, ';' in windows).
+    # These values will be inserted in front of any existing value in the current environment.
+    # e.g.:
+    #   current PATH: "/usr/local/bin:/usr/bin"
+    #   new     PATH: "{{ root }}/bin:/usr/local/bin:/usr/bin"
+    environment:
+      ORACLE_HOME: /usr/local/oracle_instantclient
+      PATH:
+        - {{ root }}/bin
+
+    aliases:
+      run_db: bash {{ root }}/bin/run_db.sh

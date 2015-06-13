@@ -23,4 +23,5 @@ yaml.add_representer(OrderedDict, represent_ordereddict)
 
 dump = yaml.dump
 load = yaml.load
+parser = yaml.parser
 dict = OrderedDict
