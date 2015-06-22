@@ -77,6 +77,12 @@ else
     return $?
 fi
 
+if [[ ! -z "${PYTHONUSERSITE+x}" ]]; then
+    export CONDA_PYTHONUSERSITE="$PYTHONUSERSITE"
+fi
+# disable user site-packages
+export PYTHONUSERSITE=0
+
 # Load any of the scripts found $PREFIX/etc/conda/activate.d
 run_scripts "activate"
 

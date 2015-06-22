@@ -63,6 +63,13 @@ else
     return $?
 fi
 
+# restore PYTHONUSERSITE env
+unset PYTHONUSERSITE
+if [[ ! -z "${CONDA_PYTHONUSERSITE+x}" ]]; then
+    export PYTHONUSERSITE="$CONDA_PYTHONUSERSITE"
+fi
+unset CONDA_PYTHONUSERSITE
+
 if [[ -n $BASH_VERSION ]]; then
     hash -r
 elif [[ -n $ZSH_VERSION ]]; then
