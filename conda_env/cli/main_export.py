@@ -1,7 +1,6 @@
 from __future__ import absolute_import, print_function
 from argparse import RawDescriptionHelpFormatter
 import os
-import sys
 import textwrap
 
 from conda.cli import common
@@ -43,11 +42,11 @@ def configure_parser(sub_parsers):
     )
 
     p.add_argument(
-        '--no-builds',
+        '--with-builds',
         default=False,
         action='store_true',
         required=False,
-        help='Remove build specification from dependencies'
+        help='Add build specification from dependencies'
     )
 
     p.set_defaults(func=execute)
@@ -72,7 +71,7 @@ def execute(args, parser):
     else:
         name = args.name
     prefix = common.get_prefix(args)
-    env = from_environment(name, prefix, no_builds=args.no_builds)
+    env = from_environment(name, prefix, with_builds=args.with_builds)
 
     if args.file is None:
         print(env.to_yaml())

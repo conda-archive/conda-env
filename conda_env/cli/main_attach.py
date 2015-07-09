@@ -1,5 +1,5 @@
 from argparse import RawDescriptionHelpFormatter
-from ..utils.notebooks import current_env, Notebook
+from ..utils.notebooks import Notebook
 from conda.cli import common
 from ..env import from_environment
 
