@@ -77,8 +77,10 @@ def execute(args, parser):
                             directory=os.getcwd())
         env = spec.environment
 
-        # FIXME conda code currently requires args to have a name or prefix
-        if args.name is None:
+        # FIXME conda code currently requires args to have a name and prefix
+        args.prefix = None
+        if not args.name:
+            # If name was not forced from args, read it from file.
             args.name = env.name
 
     except exceptions.SpecNotFound as e:
