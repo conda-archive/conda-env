@@ -1,12 +1,11 @@
 language: python
 
-matrix:
-  include:
-    - '2.6'
-    - '2.7'
-    - '3.3'
-    - '3.4'
-    - '3.5-dev'
+python:
+  - '2.6'
+  - '2.7'
+  - '3.3'
+  - '3.4'
+  - '3.5-dev'
 
 install:
   - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
