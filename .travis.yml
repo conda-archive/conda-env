@@ -1,17 +1,33 @@
 language: python
 
 python:
-  - '2.6'
-  - '2.7'
-  - '3.3'
-  - '3.4'
-  - '3.5-dev'
+  - "2.7"
+  - "3.3"
+  - "3.4"
 
 install:
-  - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
+  - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
+      wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
+    elif [[ "$TRAVIS_PYTHON_VERSION" == "3.3" ]]; then
+      wget http://repo.continuum.io/miniconda/Miniconda3-3.0.0-Linux-x86_64.sh -O miniconda.sh;
+    else
+      wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+    fi
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
-  - conda install -y conda-server ipython-notebook mock
-  - python setup.py develop
-  - which python
-script: nosetests
+  - hash -r
+  - conda config --set always_yes yes
+  - bin/conda install --force --no-deps conda requests
+  - conda --version
+  - conda install conda-server ipython-notebook mock nose
+  - if [[ "$PYCOSAT" ]]; then
+      conda install pycosat=$PYCOSAT;
+    fi
+  - python setup.py install
+  - conda info -a
+
+script:
+  - nosetests
+  - conda --help
+
+sudo: false
