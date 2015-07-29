@@ -12,4 +12,5 @@ install:
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
   - conda install -y conda-server ipython-notebook mock
+  - python setup.py develop
 script: nosetests
