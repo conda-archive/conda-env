@@ -17,14 +17,12 @@ install:
   - export PATH="$HOME/miniconda/bin:$PATH"
   - hash -r
   - conda config --set always_yes yes
-  - bin/conda install --force --no-deps conda requests
   - conda --version
   - conda install conda-server ipython-notebook mock nose
   - if [[ "$PYCOSAT" ]]; then
       conda install pycosat=$PYCOSAT;
     fi
   - python setup.py install
-  - conda info -a
 
 script:
   - nosetests
