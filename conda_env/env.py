@@ -1,12 +1,15 @@
 from __future__ import absolute_import, print_function
+
+import os
 from collections import OrderedDict
 from copy import copy
-import os
+from io import open
 
 # TODO This should never have to import from conda.cli
-from conda.cli import common
-from conda.cli import main_list
 from conda import install
+from conda.api import get_index
+from conda.cli import common, main_list
+from conda.resolve import NoPackagesFound, Resolve, MatchSpec
 
 from . import compat
 from . import exceptions
@@ -50,8 +53,38 @@ def from_environment(name, prefix, no_builds=False):
 
 
 def from_yaml(yamlstr, **kwargs):
-    """Load and return a ``Environment`` from a given ``yaml string``"""
+    """Load and return an ``Environment`` from a given ``yaml string``"""
     data = yaml.load(yamlstr)
+    if kwargs is not None:
+        for key, value in kwargs.items():
+            data[key] = value
+    return Environment(**data)
+
+
+def from_requirements_txt(reqs_file, **kwargs):
+    """Load and return an ``Environment`` from a given ``requirements.txt``"""
+    pip_reqs = []
+    dep_list = []
+    r = Resolve(get_index())
+    for line in reqs_file:
+        line = line.strip()
+        # If it's not an editable package, check if it's available via conda
+        if not line.startswith('-e'):
+            line = line.split('#', 1)[0].strip()
+            if line:
+                try:
+                    # If package is available via conda, use that
+                    r.get_pkgs(MatchSpec(common.arg2spec(line)))
+                    dep_list.append(line)
+                except NoPackagesFound:
+                    # Otherwise, just use pip
+                    pip_reqs.append(line)
+        # Editable packages just use pip
+        elif line:
+            pip_reqs.append(line)
+    dep_list.append('pip')
+    dep_list.append({'pip': pip_reqs})
+    data = {'dependencies': dep_list}
     if kwargs is not None:
         for key, value in kwargs.items():
             data[key] = value
@@ -61,8 +94,12 @@ def from_yaml(yamlstr, **kwargs):
 def from_file(filename):
     if not os.path.exists(filename):
         raise exceptions.EnvironmentFileNotFound(filename)
-    with open(filename, 'rb') as fp:
-        return from_yaml(fp.read(), filename=filename)
+    if filename.endswith('.txt'):
+        with open(filename, encoding='utf-8') as fp:
+            return from_requirements_txt(fp, filename=filename)
+    else:
+        with open(filename, 'rb') as fp:
+            return from_yaml(fp.read(), filename=filename)
 
 
 # TODO test explicitly

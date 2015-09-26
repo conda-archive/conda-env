@@ -1,0 +1,4 @@
+# Comment to be ignored
+foo
+ # Comment 2
+baz

@@ -80,6 +80,8 @@ def execute(args, parser):
         # FIXME conda code currently requires args to have a name or prefix
         if args.name is None:
             args.name = env.name
+        else:
+            env.name = args.name
 
     except exceptions.SpecNotFound as e:
         common.error_and_exit(str(e), json=args.json)

@@ -43,6 +43,14 @@ class from_file_TestCase(unittest.TestCase):
         self.assert_('foo' in e.dependencies['pip'])
         self.assert_('baz' in e.dependencies['pip'])
 
+    def test_requirements_txt(self):
+        e = env.from_file(utils.support_file('requirements.txt'))
+        self.assert_('foo' in e.dependencies['pip'])
+        self.assert_('baz' in e.dependencies['pip'])
+        self.assert_('# Comment to be ignored' not in e.dependencies['pip'])
+        self.assert_('# Comment 2' not in e.dependencies['pip'])
+        self.assert_(' # Comment 2' not in e.dependencies['pip'])
+
 
 class EnvironmentTestCase(unittest.TestCase):
     def test_has_empty_filename_by_default(self):
