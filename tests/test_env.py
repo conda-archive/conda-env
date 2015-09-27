@@ -47,6 +47,7 @@ class from_file_TestCase(unittest.TestCase):
         e = env.from_file(utils.support_file('requirements.txt'))
         self.assert_('foo' in e.dependencies['pip'])
         self.assert_('baz' in e.dependencies['pip'])
+        self.assert_('numpy' in e.dependencies)
         self.assert_('# Comment to be ignored' not in e.dependencies['pip'])
         self.assert_('# Comment 2' not in e.dependencies['pip'])
         self.assert_(' # Comment 2' not in e.dependencies['pip'])

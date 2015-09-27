@@ -2,3 +2,4 @@
 foo
  # Comment 2
 baz
+numpy
