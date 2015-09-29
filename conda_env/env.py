@@ -5,6 +5,13 @@ from collections import OrderedDict
 from copy import copy
 from io import open
 
+# Try to import PipSession to support new pips
+try:
+    from pip.download import PipSession
+except ImportError:
+    pass
+from pip.req import parse_requirements
+
 # TODO This should never have to import from conda.cli
 from conda import install
 from conda.api import get_index
@@ -61,27 +68,30 @@ def from_yaml(yamlstr, **kwargs):
     return Environment(**data)
 
 
-def from_requirements_txt(reqs_file, **kwargs):
+def from_requirements_txt(filename, **kwargs):
     """Load and return an ``Environment`` from a given ``requirements.txt``"""
     pip_reqs = []
     dep_list = []
     r = Resolve(get_index())
-    for line in reqs_file:
-        line = line.strip()
+    try:
+        parsed_reqs = list(parse_requirements(filename))
+    # Newer versions of pip require session kwarg
+    except TypeError:
+        parsed_reqs = list(parse_requirements(filename, session=PipSession()))
+    while parsed_reqs:
+        req = parsed_reqs.pop()
+        req_str = str(req.req)
+        if req.editable:
+            pip_reqs.append('-e {}'.format(str(req.link)))
         # If it's not an editable package, check if it's available via conda
-        if not line.startswith('-e'):
-            line = line.split('#', 1)[0].strip()
-            if line:
-                try:
-                    # If package is available via conda, use that
-                    r.get_pkgs(MatchSpec(common.arg2spec(line)))
-                    dep_list.append(line)
-                except NoPackagesFound:
-                    # Otherwise, just use pip
-                    pip_reqs.append(line)
-        # Editable packages just use pip
-        elif line:
-            pip_reqs.append(line)
+        else:
+            try:
+                # If package is available via conda, use that
+                r.get_pkgs(MatchSpec(common.arg2spec(req_str)))
+                dep_list.append(req_str)
+            except NoPackagesFound:
+                # Otherwise, just use pip
+                pip_reqs.append(req_str)
     dep_list.append('pip')
     dep_list.append({'pip': pip_reqs})
     data = {'dependencies': dep_list}
@@ -95,8 +105,7 @@ def from_file(filename):
     if not os.path.exists(filename):
         raise exceptions.EnvironmentFileNotFound(filename)
     if filename.endswith('.txt'):
-        with open(filename, encoding='utf-8') as fp:
-            return from_requirements_txt(fp, filename=filename)
+        return from_requirements_txt(filename)
     else:
         with open(filename, 'rb') as fp:
             return from_yaml(fp.read(), filename=filename)

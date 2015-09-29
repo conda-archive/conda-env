@@ -19,8 +19,10 @@ source:
 requirements:
   build:
     - python
+    - pip
   run:
     - python
+    - pip
 
 test:
   commands:
