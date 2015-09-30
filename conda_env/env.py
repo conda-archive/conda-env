@@ -89,8 +89,12 @@ def get_all_pip_dependencies(requirements_path, temp_dir='_delete_when_done'):
     stdout_data = process.communicate()[0]
     reqs = []
     for line in stdout_data.splitlines():
+        req = ''
         if line.startswith('Collecting'):
             req = line.split(' (', 1)[0][11:]
+        elif line.startswith('Obtaining'):
+            req = line.split(' (', 1)[0][10:]
+        if req:
             if ' from ' in req:
                 req = '-e {}'.format(req.split(' from ', 1)[1])
             reqs.append(req)

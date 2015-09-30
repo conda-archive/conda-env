@@ -45,9 +45,11 @@ class from_file_TestCase(unittest.TestCase):
 
     def test_requirements_txt(self):
         e = env.from_file(utils.support_file('requirements.txt'))
-        self.assert_('skll' in e.dependencies['pip'])
+        # skll could be in either, depending on active channels
+        self.assert_('skll' in e.dependencies['pip'] or
+                     'skll' in e.dependencies['conda'])
         self.assert_('simplejson' in e.dependencies['pip'])
-        self.assert_('-e https://github.com/fabric/fabric.git#egg=fabric' in
+        self.assert_('-e git+https://github.com/fabric/fabric.git#egg=fabric' in
                      e.dependencies['pip'])
         self.assert_('numpy' in e.dependencies['conda'])
         self.assert_('# Comment to be ignored' not in e.dependencies['pip'])

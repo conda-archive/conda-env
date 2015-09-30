@@ -2,4 +2,4 @@
 skll
  # Comment 2
 simplejson
--e https://github.com/fabric/fabric.git#egg=fabric
+-e git+https://github.com/fabric/fabric.git#egg=fabric
