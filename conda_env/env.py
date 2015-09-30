@@ -1,9 +1,13 @@
 from __future__ import absolute_import, print_function
 
+import errno
 import os
+import subprocess
 from collections import OrderedDict
 from copy import copy
 from io import open
+from os.path import isdir
+from shutil import rmtree
 
 # Try to import PipSession to support new pips
 try:
@@ -68,32 +72,55 @@ def from_yaml(yamlstr, **kwargs):
     return Environment(**data)
 
 
+def get_all_pip_dependencies(requirements_path, temp_dir='_delete_when_done'):
+    """
+    Use pip to gather all of the packages that would be installed for the given
+    requirements.txt file.
+    """
+    pip_cmd = ('pip', 'install', '--src', temp_dir, '--download', temp_dir,
+               '--no-use-wheel', '-r', requirements_path)
+    try:
+        os.makedirs(temp_dir)
+    except OSError as exc:
+        if exc.errno == errno.EEXIST and isdir(temp_dir):
+            pass
+    process = subprocess.Popen(pip_cmd, stdout=subprocess.PIPE,
+                               universal_newlines=True)
+    stdout_data = process.communicate()[0]
+    reqs = []
+    for line in stdout_data.splitlines():
+        if line.startswith('Collecting'):
+            req = line.split(' (', 1)[0][11:]
+            if ' from ' in req:
+                req = '-e {}'.format(req.split(' from ', 1)[1])
+            reqs.append(req)
+    # Remove temporary directory
+    rmtree(temp_dir)
+    return reqs
+
+
 def from_requirements_txt(filename, **kwargs):
     """Load and return an ``Environment`` from a given ``requirements.txt``"""
     pip_reqs = []
     dep_list = []
     r = Resolve(get_index())
-    try:
-        parsed_reqs = list(parse_requirements(filename))
-    # Newer versions of pip require session kwarg
-    except TypeError:
-        parsed_reqs = list(parse_requirements(filename, session=PipSession()))
-    while parsed_reqs:
-        req = parsed_reqs.pop()
-        req_str = str(req.req)
-        if req.editable:
-            pip_reqs.append('-e {}'.format(str(req.link)))
+    parsed_reqs = get_all_pip_dependencies(filename)
+    for req in parsed_reqs:
+        if req.startswith('-e'):
+            pip_reqs.append(req)
         # If it's not an editable package, check if it's available via conda
         else:
             try:
                 # If package is available via conda, use that
-                r.get_pkgs(MatchSpec(common.arg2spec(req_str)))
-                dep_list.append(req_str)
+                r.get_pkgs(MatchSpec(common.arg2spec(req)))
+                dep_list.append(req)
             except NoPackagesFound:
                 # Otherwise, just use pip
-                pip_reqs.append(req_str)
-    dep_list.append('pip')
-    dep_list.append({'pip': pip_reqs})
+                pip_reqs.append(req)
+    # Add pip requirements to environment if there were any left
+    if pip_reqs:
+        dep_list.append('pip')
+        dep_list.append({'pip': pip_reqs})
     data = {'dependencies': dep_list}
     if kwargs is not None:
         for key, value in kwargs.items():
