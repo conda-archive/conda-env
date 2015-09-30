@@ -1,5 +1,5 @@
 # Comment to be ignored
-foo
+skll
  # Comment 2
-baz
-numpy
+simplejson
+-e https://github.com/fabric/fabric.git#egg=fabric
