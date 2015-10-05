@@ -82,8 +82,9 @@ def get_all_pip_dependencies(requirements_path, temp_dir='_delete_when_done'):
     try:
         os.makedirs(temp_dir)
     except OSError as exc:
-        if exc.errno == errno.EEXIST and isdir(temp_dir):
-            pass
+        # Don't raise exception if directory already exists
+        if not (exc.errno == errno.EEXIST and isdir(temp_dir)):
+            raise
     process = subprocess.Popen(pip_cmd, stdout=subprocess.PIPE,
                                universal_newlines=True)
     stdout_data = process.communicate()[0]
