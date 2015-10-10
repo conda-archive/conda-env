@@ -23,14 +23,34 @@ fi
 
 _THIS_DIR=$(dirname "$_SCRIPT_LOCATION")
 
+echoerr() {
+    echo "$@" 1>&2
+}
+
+# Check arguments
+if [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]]; then
+    "$_THIS_DIR/conda" ..activate -h
+    return 1
+fi
+
+if [[ -z "$1" ]]; then
+    echoerr 'Error: no environment provided.'
+    return 1
+fi
+
+if [[ ! -z "$2" ]]; then
+    echoerr 'Error: did not expect more than one argument.'
+    return 1
+fi
+
+
 # Load common functions
 get_dirname() {
     echo "$(cd "$(dirname "$1")" && pwd)"
 }
 
 run_scripts() {
-    _PREFIX="$(echo $(echo $PATH | awk -F ':' '{print $1}')/..)"
-    _CONDA_D="${_PREFIX}/etc/conda/$1.d"
+    _CONDA_D="${CONDA_ENV_PATH}/etc/conda/$1.d"
     if [[ -d $_CONDA_D ]]; then
         for f in $(find $_CONDA_D -name "*.sh"); do source $f; done
     fi
@@ -41,42 +61,104 @@ get_abs_filename() {
     echo "$(get_dirname "$1")/$(basename "$1")"
 }
 
-if "$_THIS_DIR/conda" ..checkenv "$@"; then
+get_changeps1() {
+    if [[ "$CONDA_CHANGEPS1" == "1" ]]; then
+        echo '1'
+    elif [[ "$CONDA_CHANGEPS1" == "0" ]]; then
+        echo '0'
+    else
+        echo $("$_THIS_DIR/conda" ..changeps1)
+    fi
+}
+
+get_path_with_removed_dir() {
+    _DIR_TO_REMOVE="$1"
+    echo $(echo "$PATH" | tr ":" "\n" | sed "s:^$_DIR_TO_REMOVE\$::" | tr "\n" ":" | sed 's|:$||' | sed 's|^:||')
+}
+
+
+# Resolve the activate symlink to know where the root env is.
+# This script should be the real file on conda root /bin or a symlink to the
+# real file. It won't work with a symlink to another symlink. This is
+# because readlink behaviour is different and may not resolve
+# recursively on all systems using the same options.
+if [[ -L "$_SCRIPT_LOCATION" ]]; then
+    _SCRIPT_DIR_REALPATH=$(get_dirname $(readlink "$_SCRIPT_LOCATION"))
+else
+    _SCRIPT_DIR_REALPATH=$(get_dirname "$_SCRIPT_LOCATION")
+fi
+
+_CONDA_ENVS_DIR=$(get_abs_filename "$_SCRIPT_DIR_REALPATH/../envs")
+_CONDA_ROOT_BIN_PATH=$(get_abs_filename "$_SCRIPT_DIR_REALPATH/../bin")
+_CONDA_ROOT=$(get_dirname "$_CONDA_ROOT_BIN_PATH")
+
+# If the string contains / it's a path
+if [[ "$@" == */* ]]; then
+    _NEW_CONDA_DEFAULT_ENV=$(get_abs_filename "$@")
+    _NEW_CONDA_ENV_PATH="$_NEW_CONDA_DEFAULT_ENV"
+else
+    _NEW_CONDA_DEFAULT_ENV="$@"
+    if [[ "$_NEW_CONDA_DEFAULT_ENV" == "root" ]]; then
+        _NEW_CONDA_ENV_PATH="$_CONDA_ROOT"
+    else
+        _NEW_CONDA_ENV_PATH="$_CONDA_ENVS_DIR/$_NEW_CONDA_DEFAULT_ENV"
+    fi
+fi
+_NEW_CONDA_ENV_BIN_PATH="$_NEW_CONDA_ENV_PATH/bin"
+
+
+if [[ ! -d "$_NEW_CONDA_ENV_BIN_PATH" ]]; then
+    echoerr "Error: no such directory: $_NEW_CONDA_ENV_BIN_PATH"
+    return 1
+fi
+
+# Checking symlinks
+if [[ "$_NEW_CONDA_DEFAULT_ENV" != "root" ]]; then
+    for f in conda activate deactivate; do
+        if [[ ! -L "$_NEW_CONDA_ENV_BIN_PATH/$f" ]]; then
+            ln -sf "$_CONDA_ROOT_BIN_PATH/$f" "$_NEW_CONDA_ENV_BIN_PATH/$f" &> /dev/null
+            if [[ $? -ne 0 ]]; then
+                echoerr "Cannot activate environment $_NEW_CONDA_DEFAULT_ENV, do not have write access to write conda symlink"
+                return 1
+            fi
+        fi
+    done
+fi
+
+# Deactivate current environment
+if [[ ! -z $CONDA_DEFAULT_ENV ]]; then
     # Ensure we deactivate any scripts from the old env
     run_scripts "deactivate"
 
-    _NEW_PATH=$("$_THIS_DIR/conda" ..deactivate)
-    export PATH=$_NEW_PATH
-    if (( $("$_THIS_DIR/conda" ..changeps1) )); then
+    # Remove CONDA_ENV_PATH from PATH
+    if [[ ! -z $CONDA_ENV_PATH ]]; then
+        echoerr "discarding $CONDA_ENV_PATH/bin from PATH"
+        _NEW_PATH=$(get_path_with_removed_dir "$CONDA_ENV_PATH/bin")
+    else
+        _NEW_PATH=$PATH
+    fi
+
+    if (( $(get_changeps1) )); then
         if [[ -n $CONDA_OLD_PS1 ]]; then
             PS1=$CONDA_OLD_PS1
             unset CONDA_OLD_PS1
         fi
     fi
 else
-    return 1
+    echoerr "discarding $_CONDA_ROOT_BIN_PATH from PATH"
+    _NEW_PATH=$(get_path_with_removed_dir "$_CONDA_ROOT_BIN_PATH")
 fi
 
-_NEW_PATH=$("$_THIS_DIR/conda" ..activate "$@")
-if (( $? == 0 )); then
-    export PATH=$_NEW_PATH
-    # If the string contains / it's a path
-    if [[ "$@" == */* ]]; then
-        export CONDA_DEFAULT_ENV=$(get_abs_filename "$@")
-    else
-        export CONDA_DEFAULT_ENV="$@"
-    fi
+# Really activate the environment
+export CONDA_DEFAULT_ENV="$_NEW_CONDA_DEFAULT_ENV"
+export CONDA_ENV_PATH="$_NEW_CONDA_ENV_PATH"
 
-    # Get first path and convert it to absolute
-    ENV_BIN_DIR="$(echo $(echo $PATH | awk -F ':' '{print $1}'))"
-    export CONDA_ENV_PATH="$(get_dirname "$ENV_BIN_DIR")"
+echoerr "prepending $_NEW_CONDA_ENV_BIN_PATH to PATH"
+export PATH="$_NEW_CONDA_ENV_BIN_PATH:$_NEW_PATH"
 
-    if (( $("$_THIS_DIR/conda" ..changeps1) ));  then
-            CONDA_OLD_PS1="$PS1"
-            PS1="($CONDA_DEFAULT_ENV)$PS1"
-    fi
-else
-    return $?
+if (( $(get_changeps1) )); then
+    export CONDA_OLD_PS1="$PS1"
+    export PS1="($CONDA_DEFAULT_ENV)$PS1"
 fi
 
 # Load any of the scripts found $PREFIX/etc/conda/activate.d
