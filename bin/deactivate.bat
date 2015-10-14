@@ -1,36 +1,36 @@
 @echo off
+setlocal
 
-for /f "delims=" %%i in ("%~dp0..\envs") do (
-    set ANACONDA_ENVS=%%~fi
-)
-
-if "%1" == "" goto skipmissingarg
+if not "%1" == "--help" goto skipusage
+    (
     echo Usage: deactivate
     echo.
     echo Deactivates previously activated Conda
     echo environment.
+    ) 1>&2
     exit /b 1
-:skipmissingarg
+:skipusage
 
+if "%1" == "" goto skiptoomanyargs
+    (echo Error: too many arguments.) 1>&2
+    exit /b 1
+:skiptoomanyargs
 
-REM Deactivate a previous activation if it is live
-if "%CONDA_DEFAULT_ENV%" == "" goto skipdeactivate
-    REM This search/replace removes the previous env from the path
-    echo Deactivating environment "%CONDA_DEFAULT_ENV%"...
+REM Use conda itself to figure things out
+REM No conda, no dice
 
-    REM Run any deactivate scripts
-    if not exist "%CONDA_DEFAULT_ENV%\etc\conda\deactivate.d" goto nodeactivate
-        pushd "%CONDA_DEFAULT_ENV%\etc\conda\deactivate.d"
-        for %%g in (*.bat) do call "%%g"
-        popd
-    :nodeactivate
+SET CONDAFOUND=
+for %%X in (conda.exe) do (set CONDAFOUND=%%~$PATH:X)
+if not defined CONDAFOUND for %%X in (conda.bat) do (set CONDAFOUND=%%~$PATH:X)
+if defined CONDAFOUND goto runcondasecretcommand
+    echo "cannot find conda"
+    exit /b 1
 
-    set CONDACTIVATE_PATH="%CONDA_DEFAULT_ENV%";"%CONDA_DEFAULT_ENV%\Scripts";"%CONDA_DEFAULT_ENV%\Library\bin";
-    call set PATH=%%PATH:%CONDACTIVATE_PATH%=%%
-    set CONDA_DEFAULT_ENV=
-    set CONDA_ENV_PATH=
-    set CONDACTIVATE_PATH=
-:skipdeactivate
+:runcondasecretcommand
+REM activate conda root environment
+FOR /F "delims=" %%i IN ('conda ..activateroot') DO set PATH=%%i
 
-set PROMPT=%CONDA_OLD_PROMPT%
-set CONDA_OLD_PROMPT=
+:resetprompt
+set PROMPT=$P$G
+
+endlocal & set PROMPT=%PROMPT%& set PATH=%PATH%& set CONDA_DEFAULT_ENV=
