@@ -1,78 +1,115 @@
-@echo off
-REM Check for CONDA_EVS_PATH environment variable
-REM It it doesn't exist, look inside the Anaconda install tree
-if "%CONDA_ENVS_PATH%" == "" (
-set CONDA_ENVS_PATH="%~dp0..\envs"
+@echo on
+SETLOCAL ENABLEDELAYEDEXPANSION
+
+SET ARGS_COUNT=0
+FOR %%A in (%*) DO SET /A ARGS_COUNT+=1
+
+IF %ARGS_COUNT% GTR 1 CALL :usage & goto END
+ENDLOCAL & (
+    IF %ARGS_COUNT% EQU 0 (CALL :activate_root) else (CALL :activate_path_or_name %1)
 )
+goto END
 
-set CONDA_NEW_NAME=%~1
+REM Code below are subroutines called above
 
-if "%~2" == "" goto skiptoomanyargs
+:usage
+    echo.
     echo ERROR: Too many arguments provided
-    goto usage
-:skiptoomanyargs
+    echo    Activate takes 0 or 1 argument (the environment to be activated, by name or by path)
+    echo.
+    echo    Passing no arguments activates root environment.
+    goto :EOF
 
-if "%CONDA_NEW_NAME%" == "" set CONDA_NEW_NAME=%~dp0..\
+:activate_root
+    pushd %~dp0..\
+    set CONDA_NEW_PATH=%CD%
+    set CONDA_NEW_NAME=^<root^>
+    popd
+    CALL :deactivate_active_env
+    CALL :set_paths
+    goto :EOF
 
-REM Search through paths in CONDA_ENVS_PATH
-REM First match will be the one used
+:activate_path_or_name
+    set CONDA_NEW_NAME=%1
+    if "%CONDA_NEW_NAME%" == "DEACTIVATE" (call :deactivate_active_env & goto deactivated)
+    REM CONDA_NEW_NAME might be a path or simply and env name here.
+    REM    if EXIST effectively checks if it is a path.  If both a path in CWD AND
+    REM    an environment with a similar name exist, then the path in CWD takes
+    REM    preference
+    if EXIST %CONDA_NEW_NAME% (CALL :activate_path) else (CALL :activate_name)
+    CALL :deactivate_active_env
+    CALL :set_paths
+    :deactivated
+    goto :EOF
 
-for %%F in ("%CONDA_ENVS_PATH:;=" "%") do (
-    if exist "%%~F\%CONDA_NEW_NAME%\conda-meta" (
-       set CONDA_NEW_PATH=%%~F\%CONDA_NEW_NAME%
-       goto found_env
-    )
-)
-
-if exist "%CONDA_NEW_NAME%\conda-meta" (
-    set CONDA_NEW_PATH=%CONDA_NEW_NAME%
+:activate_path
+    if exist "%CONDA_NEW_NAME%\conda-meta" (
+        set CONDA_NEW_PATH=%CONDA_NEW_NAME%
+        REM set the name to be shown to be the last folder in the path
+        for /F %%i in ("%CONDA_NEW_PATH%") do set CONDA_NEW_NAME=%%~ni
     ) else (
-    echo No environment named "%CONDA_NEW_NAME%" exists in %CONDA_ENVS_PATH%, or is not a valid conda installation directory.
-    set CONDA_NEW_NAME=
-    set CONDA_NEW_PATH=
-    exit /b 1
-)
+        echo Error: %CONDA_NEW_NAME% is not a valid conda installation directory. & goto END
+    )
+    goto :EOF
 
-:found_env
+: activate_name
+    REM Check for CONDA_EVS_PATH environment variable
+    REM It it doesn't exist, look inside the Anaconda install tree
+    if NOT DEFINED CONDA_ENVS_PATH (
+        pushd %~dp0..\
+        set CONDA_ENVS_PATH=%CD%\envs
+        popd
+    )
+    REM Search through paths in CONDA_ENVS_PATH
+    REM First match will be the one used
+    for %%F in ("%CONDA_ENVS_PATH:;=" "%") do (
+        if exist "%%~F\%CONDA_NEW_NAME%\conda-meta" (
+        set CONDA_NEW_PATH=%%~F\%CONDA_NEW_NAME%
+        )
+    )
+    IF NOT DEFINED CONDA_NEW_PATH echo Error: Did not find env named %CONDA_NEW_NAME% in %CONDA_ENVS_PATH% & goto END
+    goto :EOF
 
-for /F %%i in ("%CONDA_NEW_PATH%") do set CONDA_NEW_NAME=%%~ni
+:set_active_path
+    set CONDACTIVATE_PATH=%CONDA_ACTIVE_ENV%;%CONDA_ACTIVE_ENV%\Scripts;%CONDA_ACTIVE_ENV%\Library\bin;
+    goto :EOF
 
-REM Deactivate a previous activation if it is live
-if "%CONDA_DEFAULT_ENV%" == "" goto skipdeactivate
-    REM This search/replace removes the previous env from the path
-    echo Deactivating environment "%CONDA_DEFAULT_ENV%"...
+:deactivate_active_env
+    if NOT DEFINED CONDA_ACTIVE_ENV goto not_active
+    echo Deactivating environment "%CONDA_ACTIVE_ENV%"...
 
     REM Run any deactivate scripts
-    if not exist "%CONDA_DEFAULT_ENV%\etc\conda\deactivate.d" goto nodeactivate
-        pushd "%CONDA_DEFAULT_ENV%\etc\conda\deactivate.d"
+    if not exist "%CONDA_ACTIVE_ENV%\etc\conda\deactivate.d" goto nodeactivate
+        pushd "%CONDA_ACTIVE_ENV%\etc\conda\deactivate.d"
         for %%g in (*.bat) do call "%%g"
         popd
     :nodeactivate
 
-    set CONDACTIVATE_PATH="%CONDA_DEFAULT_ENV%";"%CONDA_DEFAULT_ENV%\Scripts";"%CONDA_DEFAULT_ENV%\Library\bin"
+    REM This search/replace removes the previous env from the path
+    call :set_active_path
+    echo %PATH%
     call set PATH=%%PATH:%CONDACTIVATE_PATH%=%%
-    set CONDA_DEFAULT_ENV=
+    echo %PATH%
+    set CONDA_ACTIVE_ENV=
     set CONDACTIVATE_PATH=
     set PROMPT=%CONDA_OLD_PROMPT%
     set CONDA_OLD_PROMPT=
-:skipdeactivate
+    :not_active
+    goto :EOF
 
-set CONDA_DEFAULT_ENV=%CONDA_NEW_PATH%
-echo Activating environment "%CONDA_DEFAULT_ENV%"...
-set PATH="%CONDA_DEFAULT_ENV%";"%CONDA_DEFAULT_ENV%\Scripts";"%CONDA_DEFAULT_ENV%\Library\bin";%PATH%
-IF "%CONDA_NEW_NAME%"=="" (
-   set PROMPT=$P$G
-   REM Clear CONDA_DEFAULT_ENV so that this is truly a "root" environment, not an environment pointed at root
-   set CONDA_DEFAULT_ENV=
-   ) ELSE (
-   set PROMPT=[%CONDA_NEW_NAME%] $P$G
-)
-set CONDA_NEW_NAME=
-set CONDA_NEW_PATH=
+:set_paths
+    set CONDA_ACTIVE_ENV=%CONDA_NEW_PATH%
+    echo Activating environment "%CONDA_NEW_NAME%"...
+    call :set_active_path
+    set PATH=%CONDACTIVATE_PATH%%PATH%
+    set "PROMPT=[%CONDA_NEW_NAME%] $P$G"
 
-REM Run any activate scripts
-if not exist "%CONDA_DEFAULT_ENV%\etc\conda\activate.d" goto noactivate
-    pushd "%CONDA_DEFAULT_ENV%\etc\conda\activate.d"
-    for %%g in (*.bat) do call "%%g"
-    popd
-:noactivate
+    REM Run any activate scripts
+    if not exist "%CONDA_ACTIVE_ENV%\etc\conda\activate.d" goto noactivate
+        pushd "%CONDA_ACTIVE_ENV%\etc\conda\activate.d"
+        for %%g in (*.bat) do call "%%g"
+        popd
+    :noactivate
+    goto :EOF
+
+:END
