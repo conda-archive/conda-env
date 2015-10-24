@@ -75,7 +75,7 @@ def execute(args, parser):
         if not env.name:
                     # Note, this is a hack fofr get_prefix that assumes argparse results
             # TODO Refactor common.get_prefix
-            name = os.environ.get('CONDA_DEFAULT_ENV', False)
+            name = os.environ.get('CONDA_ACTIVE_ENV', False)
             if not name:
                 msg = "Unable to determine environment\n\n"
                 msg += textwrap.dedent("""

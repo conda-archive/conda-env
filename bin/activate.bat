@@ -1,4 +1,4 @@
-@echo on
+@echo off
 setlocal
 
 set CONDA_NEW_ENV=%~1
@@ -15,7 +15,7 @@ if not "%1" == "" goto skipmissingarg
 
 REM Use conda itself to figure things out
 
-SET "CONDA_EXE=%~dp0\conda.bat"
+SET "CONDA_EXE=%~dp0\\conda.exe"
 
 REM TODO: will this work if Conda root env is not on PATH?
 
@@ -41,4 +41,4 @@ if "%CHANGEPS1%" == "1" set PROMPT=[%CONDA_NEW_ENV%] $P$G
 if %ERRORLEVEL% GTR 0 (
 exit /b 1
 )
-endlocal & set PROMPT=%PROMPT%& set PATH=%PATH%& set CONDA_DEFAULT_ENV=%CONDA_NEW_ENV%
+endlocal & set PROMPT=%PROMPT%& set PATH=%PATH%& set CONDA_ACTIVE_ENV=%CONDA_NEW_ENV%

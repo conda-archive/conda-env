@@ -62,9 +62,9 @@ if (( $? == 0 )); then
     export PATH=$_NEW_PATH
     # If the string contains / it's a path
     if [[ "$@" == */* ]]; then
-        export CONDA_DEFAULT_ENV=$(get_abs_filename "$@")
+        export CONDA_ACTIVE_ENV=$(get_abs_filename "$@")
     else
-        export CONDA_DEFAULT_ENV="$@"
+        export CONDA_ACTIVE_ENV="$@"
     fi
 
     # Get first path and convert it to absolute
@@ -73,7 +73,7 @@ if (( $? == 0 )); then
 
     if (( $("$_THIS_DIR/conda" ..changeps1) ));  then
             CONDA_OLD_PS1="$PS1"
-            PS1="($CONDA_DEFAULT_ENV)$PS1"
+            PS1="($CONDA_ACTIVE_ENV)$PS1"
     fi
 else
     return $?

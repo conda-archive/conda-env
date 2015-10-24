@@ -5,7 +5,7 @@ import sys
 try:
     from conda.cli.main import args_func
 except ImportError as e:
-    if 'CONDA_DEFAULT_ENV' in os.environ:
+    if 'CONDA_ACTIVE_ENV' in os.environ:
         sys.stderr.write("""
 There was an error importing conda.
 
