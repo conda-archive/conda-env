@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import sys
+import os
 
 if 'develop' in sys.argv:
     from setuptools import setup
@@ -7,6 +8,8 @@ if 'develop' in sys.argv:
 else:
     from distutils.core import setup
     using_setuptools = False
+
+from distutils.command.install import install as _install
 
 if sys.version_info[:2] < (2, 7):
     sys.exit("conda is only meant for Python 2.7, with experimental support "
@@ -17,11 +20,25 @@ if sys.platform == 'win32':
         'bin\\activate.bat',
         'bin\\deactivate.bat',
     ]
+
+    def _post_install(dir):
+        from subprocess import call
+        for script in ("activate.bat", "deactivate.bat"):
+            call(["unix2dos", os.path.join(sys.prefix, "Scripts", script)],)
+
+    class install(_install):
+        def run(self):
+            _install.run(self)
+            self.execute(_post_install, (self.install_lib,),
+                        msg="Converting UNIX line endings to Windows")
+
+    cmdclass = {"install": install, "develop": install}
 else:
     scripts = [
         'bin/activate',
         'bin/deactivate',
     ]
+    cmdclass = {}
 
 setup(
     name="conda-env",
@@ -53,4 +70,5 @@ setup(
         'bin/conda-env',
     ] + scripts,
     package_data={},
+    cmdclass=cmdclass,
 )
