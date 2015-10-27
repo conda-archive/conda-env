@@ -1,12 +1,26 @@
 from __future__ import absolute_import, print_function
+
+import errno
+import os
+import subprocess
 from collections import OrderedDict
 from copy import copy
-import os
+from io import open
+from os.path import isdir
+from shutil import rmtree
+
+# Try to import PipSession to support new pips
+try:
+    from pip.download import PipSession
+except ImportError:
+    pass
+from pip.req import parse_requirements
 
 # TODO This should never have to import from conda.cli
-from conda.cli import common
-from conda.cli import main_list
 from conda import install
+from conda.api import get_index
+from conda.cli import common, main_list
+from conda.resolve import NoPackagesFound, Resolve, MatchSpec
 
 from . import compat
 from . import exceptions
@@ -50,8 +64,69 @@ def from_environment(name, prefix, no_builds=False):
 
 
 def from_yaml(yamlstr, **kwargs):
-    """Load and return a ``Environment`` from a given ``yaml string``"""
+    """Load and return an ``Environment`` from a given ``yaml string``"""
     data = yaml.load(yamlstr)
+    if kwargs is not None:
+        for key, value in kwargs.items():
+            data[key] = value
+    return Environment(**data)
+
+
+def get_all_pip_dependencies(requirements_path, temp_dir='_delete_when_done'):
+    """
+    Use pip to gather all of the packages that would be installed for the given
+    requirements.txt file.
+    """
+    pip_cmd = ('pip', 'install', '--src', temp_dir, '--download', temp_dir,
+               '--no-use-wheel', '-r', requirements_path)
+    try:
+        os.makedirs(temp_dir)
+    except OSError as exc:
+        # Don't raise exception if directory already exists
+        if not (exc.errno == errno.EEXIST and isdir(temp_dir)):
+            raise
+    process = subprocess.Popen(pip_cmd, stdout=subprocess.PIPE,
+                               universal_newlines=True)
+    stdout_data = process.communicate()[0]
+    reqs = []
+    for line in stdout_data.splitlines():
+        req = ''
+        if line.startswith('Collecting'):
+            req = line.split(' (', 1)[0][11:]
+        elif line.startswith('Obtaining'):
+            req = line.split(' (', 1)[0][10:]
+        if req:
+            if ' from ' in req:
+                req = '-e {}'.format(req.split(' from ', 1)[1])
+            reqs.append(req)
+    # Remove temporary directory
+    rmtree(temp_dir)
+    return reqs
+
+
+def from_requirements_txt(filename, **kwargs):
+    """Load and return an ``Environment`` from a given ``requirements.txt``"""
+    pip_reqs = []
+    dep_list = []
+    r = Resolve(get_index())
+    parsed_reqs = get_all_pip_dependencies(filename)
+    for req in parsed_reqs:
+        if req.startswith('-e'):
+            pip_reqs.append(req)
+        # If it's not an editable package, check if it's available via conda
+        else:
+            try:
+                # If package is available via conda, use that
+                r.get_pkgs(MatchSpec(common.arg2spec(req)))
+                dep_list.append(req)
+            except NoPackagesFound:
+                # Otherwise, just use pip
+                pip_reqs.append(req)
+    # Add pip requirements to environment if there were any left
+    if pip_reqs:
+        dep_list.append('pip')
+        dep_list.append({'pip': pip_reqs})
+    data = {'dependencies': dep_list}
     if kwargs is not None:
         for key, value in kwargs.items():
             data[key] = value
@@ -61,8 +136,11 @@ def from_yaml(yamlstr, **kwargs):
 def from_file(filename):
     if not os.path.exists(filename):
         raise exceptions.EnvironmentFileNotFound(filename)
-    with open(filename, 'rb') as fp:
-        return from_yaml(fp.read(), filename=filename)
+    if filename.endswith('.txt'):
+        return from_requirements_txt(filename)
+    else:
+        with open(filename, 'rb') as fp:
+            return from_yaml(fp.read(), filename=filename)
 
 
 # TODO test explicitly

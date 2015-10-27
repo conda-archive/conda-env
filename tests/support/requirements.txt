@@ -1,0 +1,5 @@
+# Comment to be ignored
+skll
+ # Comment 2
+simplejson
+-e git+https://github.com/fabric/fabric.git#egg=fabric
