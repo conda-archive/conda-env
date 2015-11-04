@@ -71,6 +71,10 @@ IF "%CONDA_NEW_NAME%"=="" (
 set CONDA_NEW_NAME=
 set CONDA_NEW_PATH=
 
+REM CONDA_ENV_PATH is defined on linux, define it here to maintain consistency
+set CONDA_ENV_PATH=
+if not "%CONDA_DEFAULT_ENV%" == "" set CONDA_ENV_PATH=%CONDA_DEFAULT_ENV%
+
 REM Run any activate scripts
 if not exist "%CONDA_DEFAULT_ENV%\etc\conda\activate.d" goto noactivate
     pushd "%CONDA_DEFAULT_ENV%\etc\conda\activate.d"
