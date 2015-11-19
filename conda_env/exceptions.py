@@ -63,3 +63,11 @@ class NBFormatNotInstalled(CondaEnvRuntimeError):
         conda install nbformat
         """
         super(NBFormatNotInstalled, self).__init__(msg)
+
+
+class Jinja2NotInstalled(CondaEnvRuntimeError):
+    def __init__(self):
+        msg = """jinja2 is not installed. Install it with:
+        conda install jinja2
+        """
+        super(NBFormatNotInstalled, self).__init__(msg)
