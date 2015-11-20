@@ -9,9 +9,8 @@ from ..exceptions import EnvironmentFileNotFound, Jinja2NotInstalled
 
 
 class Jinja2Spec(object):
-    _environment = None
-
     def __init__(self, filename=None, **kwargs):
+        self._environment = None
         self.filename = filename
         self.msg = None
 
