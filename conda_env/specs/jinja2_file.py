@@ -1,3 +1,5 @@
+import os
+import sys
 try:
     import jinja2
 except ImportError:
@@ -27,7 +29,7 @@ class Jinja2Spec(object):
         if jinja2 is None:
             raise Jinja2NotInstalled()
         with open(filename) as jinjafile:
-            return jinja2.Template(jinjafile.read()).render()
+            return jinja2.Template(jinjafile.read()).render(sys=sys, os=os)
 
     @property
     def environment(self):
