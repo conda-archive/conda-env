@@ -62,11 +62,12 @@ set CONDA_DEFAULT_ENV=%CONDA_NEW_PATH%
 echo Activating environment "%CONDA_DEFAULT_ENV%"...
 set PATH=%CONDA_DEFAULT_ENV%;%CONDA_DEFAULT_ENV%\Scripts;%CONDA_DEFAULT_ENV%\Library\bin;%PATH%
 IF "%CONDA_NEW_NAME%"=="" (
-   set PROMPT=$P$G
+   set PROMPT=%CONDA_OLD_PROMPT%
    REM Clear CONDA_DEFAULT_ENV so that this is truly a "root" environment, not an environment pointed at root
    set CONDA_DEFAULT_ENV=
    ) ELSE (
-   set PROMPT=[%CONDA_NEW_NAME%] $P$G
+   set CONDA_OLD_PROMPT=%PROMPT%
+   set PROMPT=[%CONDA_NEW_NAME%] %PROMPT%
 )
 set CONDA_NEW_NAME=
 set CONDA_NEW_PATH=
