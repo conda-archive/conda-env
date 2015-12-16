@@ -18,6 +18,7 @@ IF "%~2" == "" GOTO skiptoomanyargs
 :skiptoomanyargs
 
 IF "%CONDA_NEW_NAME%" == "" set "CONDA_NEW_NAME=%~dp0.."
+IF "%CONDA_NEW_NAME%" == "root" set "CONDA_NEW_NAME=%~dp0.."
 
 REM Search through paths in CONDA_ENVS_PATH
 REM First match will be the one used
