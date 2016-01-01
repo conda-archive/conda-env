@@ -55,13 +55,6 @@ IF "%CONDA_DEFAULT_ENV%" == "" GOTO skipdeactivate
     REM This search/replace removes the previous env from the path
     ECHO Deactivating environment "%CONDA_DEFAULT_ENV%"...
 
-    REM Run any deactivate scripts
-    IF NOT EXIST "%CONDA_DEFAULT_ENV%\etc\conda\deactivate.d" GOTO nodeactivate
-        PUSHD "%CONDA_DEFAULT_ENV%\etc\conda\deactivate.d"
-        FOR %%g IN (*.bat) DO CALL "%%g"
-        POPD
-    :nodeactivate
-
     REM Remove env name from PROMPT
     FOR /F "tokens=* delims=\" %%i IN ("%CONDA_DEFAULT_ENV%") DO SET "CONDA_OLD_ENV_NAME=%%~ni"
     call set PROMPT=%%PROMPT:[%CONDA_OLD_ENV_NAME%] =%%
@@ -86,13 +79,6 @@ REM Make sure that root's Scripts dir is on PATH, for sake of keeping activate/d
 CALL SET "PATH_NO_SCRIPTS=%%PATH:%SCRIPT_PATH%=%%"
 IF "%PATH_NO_SCRIPTS%"=="%PATH%" SET "PATH=%PATH%;%SCRIPT_PATH%"
 
-REM Run any activate scripts
-IF NOT EXIST "%CONDA_DEFAULT_ENV%\etc\conda\activate.d" GOTO noactivate
-    PUSHD "%CONDA_DEFAULT_ENV%\etc\conda\activate.d"
-    FOR %%g IN (*.bat) DO CALL "%%g"
-    POPD
-:noactivate
-
 REM Trim trailing semicolon, if any
 IF "%PATH:~-1%"==";" SET "PATH=%PATH:~0,-1%"
 
@@ -100,10 +86,24 @@ REM Clean up any double colons we may have ended up with
 SET "PATH=%PATH:;;=;%"
 
 ENDLOCAL & (
+    REM Run any deactivate scripts
+    IF EXIST "%CONDA_DEFAULT_ENV%\etc\conda\deactivate.d" (
+        PUSHD "%CONDA_DEFAULT_ENV%\etc\conda\deactivate.d"
+        FOR %%g IN (*.bat) DO CALL "%%g"
+        POPD
+	)
+
     SET "PATH=%PATH%"
     SET "PROMPT=%PROMPT%"
     SET "CONDA_DEFAULT_ENV=%CONDA_DEFAULT_ENV%"
     SET "CONDA_PATH_BACKUP=%CONDA_PATH_BACKUP%"
+
+	REM Run any activate scripts
+	IF EXIST "%CONDA_DEFAULT_ENV%\etc\conda\activate.d" (
+		PUSHD "%CONDA_DEFAULT_ENV%\etc\conda\activate.d"
+		FOR %%g IN (*.bat) DO CALL "%%g"
+		POPD
+	)
 )
 
 EXIT /B
