@@ -3,7 +3,9 @@
 # Ensure that this script is sourced, not executed
 # Also note that errors are ignored as `activate foo` doesn't generate a bad
 # value for $0 which would cause errors.
-if [[ -n $BASH_VERSION ]] && [[ "$(basename "$0" 2> /dev/null)" == "activate" ]]; then
+# Also note, variables that could potentially be unset should have parameter
+# expansion set them to null. ex: ${VARIABLE:=''}
+if [[ -n ${BASH_VERSION:=''} ]] && [[ "$(basename "$0" 2> /dev/null)" == "activate" ]]; then
     >&2 echo "Error: activate must be sourced. Run 'source activate envname'
 instead of 'activate envname'.
 "
@@ -12,9 +14,9 @@ instead of 'activate envname'.
 fi
 
 # Determine the directory containing this script
-if [[ -n $BASH_VERSION ]]; then
+if [[ -n ${BASH_VERSION:=''} ]]; then
     _SCRIPT_LOCATION=${BASH_SOURCE[0]}
-elif [[ -n $ZSH_VERSION ]]; then
+elif [[ -n ${ZSH_VERSION:=''} ]]; then
     _SCRIPT_LOCATION=${funcstack[1]}
 else
     echo "Only bash and zsh are supported"
@@ -48,7 +50,7 @@ if "$_THIS_DIR/conda" ..checkenv "$@"; then
     _NEW_PATH=$("$_THIS_DIR/conda" ..deactivate)
     export PATH=$_NEW_PATH
     if (( $("$_THIS_DIR/conda" ..changeps1) )); then
-        if [[ -n $CONDA_OLD_PS1 ]]; then
+        if [[ -n ${CONDA_OLD_PS1:=''} ]]; then
             PS1=$CONDA_OLD_PS1
             unset CONDA_OLD_PS1
         fi
@@ -72,7 +74,7 @@ if (( $? == 0 )); then
     export CONDA_ENV_PATH="$(get_dirname "$ENV_BIN_DIR")"
 
     if (( $("$_THIS_DIR/conda" ..changeps1) ));  then
-            CONDA_OLD_PS1="$PS1"
+            CONDA_OLD_PS1="${PS1:=''}"
             PS1="($CONDA_DEFAULT_ENV)$PS1"
     fi
 else
@@ -82,9 +84,9 @@ fi
 # Load any of the scripts found $PREFIX/etc/conda/activate.d
 run_scripts "activate"
 
-if [[ -n $BASH_VERSION ]]; then
+if [[ -n ${BASH_VERSION:=''} ]]; then
     hash -r
-elif [[ -n $ZSH_VERSION ]]; then
+elif [[ -n ${ZSH_VERSION:=''} ]]; then
     rehash
 else
     echo "Only bash and zsh are supported"
