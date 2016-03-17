@@ -86,6 +86,10 @@ REM Make sure that root's Scripts dir is on PATH, for sake of keeping activate/d
 CALL SET "PATH_NO_SCRIPTS=%%PATH:%SCRIPT_PATH%=%%"
 IF "%PATH_NO_SCRIPTS%"=="%PATH%" SET "PATH=%PATH%;%SCRIPT_PATH%"
 
+REM CONDA_ENV_PATH is defined on linux, define it here to maintain consistency
+set CONDA_ENV_PATH=
+if not "%CONDA_DEFAULT_ENV%" == "" set CONDA_ENV_PATH=%CONDA_DEFAULT_ENV%
+
 REM Run any activate scripts
 IF NOT EXIST "%CONDA_DEFAULT_ENV%\etc\conda\activate.d" GOTO noactivate
     PUSHD "%CONDA_DEFAULT_ENV%\etc\conda\activate.d"
