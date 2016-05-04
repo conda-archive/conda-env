@@ -1,28 +1,26 @@
 package: conda-env
-user: conda
+user: conda-team
 
+## The platforms to build on.
+## platform defaults to linux-64
 platform:
   - linux-32
   - linux-64
+  - osx-64
   - win-32
   - win-64
-  - osx-64
-
+## The engine are the inital conda packages you want to run with
 engine:
-  - python=2
-  - python=3.3
-  - python=3.4
-# env:
-#   - CONDA_PY=27
-#   - CONDA_PY=33
-#   - CONDA_PY=34
+  - python=3
+## The envvars param is an environment variable list
+env:
+  - PYTHON_VERSION=2.7
+  - PYTHON_VERSION=3.4
+  - PYTHON_VERSION=3.5
 
 # Can't test on binstar because it needs to be installed in root
 script:
-  - conda build --no-test ./conda.recipe/
-
-install:
-  - conda install --name root jinja2
-  - conda update --name root conda-build --yes
+  - python -c "from platform import system as s; import sys; sys.exit(int(s()!='Windows'))" || conda build conda.recipe --python $PYTHON_VERSION
+  - python -c "from platform import system as s; import sys; sys.exit(int(s()=='Windows'))" || conda build conda.recipe --python %PYTHON_VERSION%
 
 build_targets: conda
