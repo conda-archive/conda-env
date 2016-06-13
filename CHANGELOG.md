@@ -5,14 +5,18 @@ If you need more details about the changes made visit the
 on Github. Every release commit has all the information about
 the changes in the source code.
 
-#### v2.5.0 (04/XX/16)
+#### v2.5.0 (06/13/16)
 
 - Add a mechanism to let an environment disable the default channels (@mwiebe, #229)
 - Fix conda env create <username>/<env name> (@oyse, #228)
 - Move activate scripts to conda main repo, (@msarahan, #234)
 - Add conda.pip module from conda (@ilanschnell, #235)
 - Implement --prune options for "conda env update" (@nicoddemus, #195)
-- Preprocessing selectors, (@Korijn, #213)
+- Add more preprocessing selectors, (@Korijn, #213)
+- Allow creation of conda envs with path specification instead of name (@jerowe, #244)
+- Replace Response.raw.read() with Response.text (@Statkraft-MIAD, #228)
+- Add pip.py module from conda 4.0.0 (@ilanschnell, #235)
+- Check return code when calling pip (@dmkent, #224)
 
 #### v2.4.5 (12/08/15)
 
