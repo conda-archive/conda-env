@@ -4,6 +4,7 @@ from os.path import basename
 import textwrap
 
 from conda.cli import common
+import conda.instructions as inst
 
 _help = "Remove an environment"
 _description = _help + """
@@ -70,8 +71,8 @@ def execute(args, parser):
 
 
     actions = {
-        plan.PREFIX: prefix,
-        plan.UNLINK: sorted(linked(prefix))
+        inst.PREFIX: prefix,
+        inst.UNLINK: sorted(linked(prefix))
     }
 
     if plan.nothing_to_do(actions):
