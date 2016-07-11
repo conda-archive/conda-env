@@ -77,7 +77,8 @@ def execute(args, parser):
         env = spec.environment
 
         # FIXME conda code currently requires args to have a name or prefix
-        if args.prefix is None:
+        # don't overwrite name if it's given. gh-254
+        if args.prefix is None and args.name is None:
             args.name = env.name
 
     except exceptions.SpecNotFound as e:
