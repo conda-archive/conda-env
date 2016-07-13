@@ -5,6 +5,12 @@ If you need more details about the changes made visit the
 on Github. Every release commit has all the information about
 the changes in the source code.
 
+#### v2.5.2 (07/13/16)
+
+- Fix #257 environment.yml parsing errors. (@jseabold, #261)
+- Fix #254 Override file's name using --name command line argument. (@jseabold, #262)
+
+
 #### v2.5.1 (06/16/16)
 
 - Remove selectors. (@kalefranz, #253)
