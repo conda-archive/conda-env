@@ -31,6 +31,7 @@ class BinstarSpec(object):
     def __init__(self, name=None, **kwargs):
         self.name = name
         self.quiet = False
+        self.version = None
         if get_binstar is not None:
             self.binstar = get_binstar()
         else:
@@ -81,15 +82,24 @@ class BinstarSpec(object):
         :raises: EnvironmentFileNotDownloaded
         """
         if self._environment is None:
+
             versions = [{
                 'normalized': normalized_version(d['version']),
                 'original': d['version']} for d in self.file_data]
-            latest_version = max(versions, key=lambda x: x['normalized'])['original']
-            file_data = [data for data in self.package['files'] if data['version'] == latest_version]
-            req = self.binstar.download(self.username, self.packagename, latest_version, file_data[0]['basename'])
+
+            if self.version:
+                print("We have a version! {}".format(self.version))
+                file_data = [data for data in self.package['files'] if data['version'] == self.version]
+                req = self.binstar.download(self.username, self.packagename, self.version, file_data[0]['basename'])
+            else:
+                latest_version = max(versions, key=lambda x: x['normalized'])['original']
+                file_data = [data for data in self.package['files'] if data['version'] == latest_version]
+                req = self.binstar.download(self.username, self.packagename, latest_version, file_data[0]['basename'])
+
             if req is None:
                 raise EnvironmentFileNotDownloaded(self.username, self.packagename)
             self._environment = req.text
+
         return env.from_yaml(self._environment)
 
     @property
@@ -117,4 +127,18 @@ class BinstarSpec(object):
 
     def parse(self):
         """Parse environment definition handle"""
-        return self.name.split('/', 1)
+        split_name = self.name.split('/')
+
+        if len(split_name) == 3:
+            #We have a version
+            self.version = split_name[2]
+            return split_name[0:2]
+        elif len(split_name) == 2:
+            #No version should be user/package
+            return split_name
+        else:
+            #We should raise some sort of exception here
+            self.msg = "Remote definition name does not match convention. It should be user/package. Example: darth/deathstar"
+            return False
+
+        # return self.name.split('/', 1)
