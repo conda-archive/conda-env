@@ -45,7 +45,7 @@ class Uploader(object):
 
     @property
     def version(self):
-        if self.env_data.get('version'):
+        if self.env_data and self.env_data.get('version'):
             return self.env_data['version']
         else:
             return time.strftime('%Y.%m.%d.%H%M')
