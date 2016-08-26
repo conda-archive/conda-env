@@ -88,7 +88,6 @@ class BinstarSpec(object):
                 'original': d['version']} for d in self.file_data]
 
             if self.version:
-                print("We have a version! {}".format(self.version))
                 file_data = [data for data in self.package['files'] if data['version'] == self.version]
                 req = self.binstar.download(self.username, self.packagename, self.version, file_data[0]['basename'])
             else:
