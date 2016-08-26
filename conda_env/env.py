@@ -127,12 +127,10 @@ def unique(seq, key=None):
 
 class Environment(object):
     def __init__(self, name=None, filename=None, channels=None,
-                 dependencies=None, prefix=None, version=None, summary=None):
+                 dependencies=None, prefix=None):
         self.name = name
         self.filename = filename
         self.prefix = prefix
-        self.version = version
-        self.summary = summary
         self.dependencies = Dependencies(dependencies)
 
         if channels is None:
@@ -153,10 +151,6 @@ class Environment(object):
             d['dependencies'] = self.dependencies.raw
         if self.prefix:
             d['prefix'] = self.prefix
-        if self.version:
-            d['version'] = self.version
-        if self.summary:
-            d['summary'] = self.version
         return d
 
     def to_yaml(self, stream=None):
