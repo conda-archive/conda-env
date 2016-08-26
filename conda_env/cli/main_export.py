@@ -93,7 +93,7 @@ def execute(args, parser):
                 Please re-run this command with one of the following options:
 
                 * Provide an environment name via --name or -n
-                * Alternately, provide an environment path via --path or -p
+                * Alternately, provide an environment path via --prefix or -p
                 * Re-run this command inside an activated conda environment.""").lstrip()
             # TODO Add json support
             common.error_and_exit(msg, json=False)
