@@ -4,6 +4,11 @@ from .. import env
 from ..exceptions import EnvironmentFileNotDownloaded, CondaEnvException
 try:
     from binstar_client import errors
+    from binstar_client.utils import get_binstar
+except ImportError:
+    get_binstar= None
+try:
+    from binstar_client import errors
     from binstar_client.utils import get_server_api
 except ImportError:
     get_server_api = None
@@ -35,7 +40,6 @@ class BinstarSpec(object):
             self.binstar = get_server_api()
         else:
             self.binstar = None
-        self.specs = parse_specs(name)
 
     def can_handle(self):
         """
@@ -69,6 +73,12 @@ class BinstarSpec(object):
         :return: True or False
         """
         return len(self.file_data) > 0
+
+    @property
+    def specs(self):
+        if self._specs is None:
+            self._specs = parse_specs(self.name)
+        return self._specs
 
     @property
     def file_data(self):
