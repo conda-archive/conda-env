@@ -4,13 +4,13 @@ from .. import env
 from ..exceptions import EnvironmentFileNotDownloaded, CondaEnvException
 try:
     from binstar_client import errors
-    from binstar_client.utils import get_binstar
+    from binstar_client.utils import get_server_api
 except ImportError:
-    get_binstar = None
+    get_server_api = None
+from binstar_client.utils.spec import parse_specs
 
 ENVIRONMENT_TYPE = 'env'
 # TODO: isolate binstar related code into conda_env.utils.binstar
-
 
 class BinstarSpec(object):
     """
@@ -31,11 +31,11 @@ class BinstarSpec(object):
     def __init__(self, name=None, **kwargs):
         self.name = name
         self.quiet = False
-        self.version = None
-        if get_binstar is not None:
-            self.binstar = get_binstar()
+        if get_server_api is not None:
+            self.binstar = get_server_api()
         else:
             self.binstar = None
+        self.specs = parse_specs(name)
 
     def can_handle(self):
         """
@@ -114,30 +114,27 @@ class BinstarSpec(object):
 
     @property
     def username(self):
-        if self._username is None:
-            self._username = self.parse()[0]
-        return self._username
+        if self.specs._user is None:
+            self.specs_error()
+        else:
+            return self.specs._user
+
+    @property
+    def version(self):
+        if self.specs._version is None:
+            return None
+        else:
+            return self.specs._version
 
     @property
     def packagename(self):
-        if self._packagename is None:
-            self._packagename = self.parse()[1]
-        return self._packagename
-
-    def parse(self):
-        """Parse environment definition handle"""
-        split_name = self.name.split('/')
-
-        if len(split_name) == 3:
-            #We have a version
-            self.version = split_name[2]
-            return split_name[0:2]
-        elif len(split_name) == 2:
-            #No version should be user/package
-            return split_name
+        if self.specs._package is None:
+            self.specs_error()
         else:
-            #We should raise some sort of exception here
-            self.msg = "Remote definition name does not match convention. It should be user/package. Example: darth/deathstar"
-            return False
+            return self.specs._package
 
-        # return self.name.split('/', 1)
+    def specs_error(self):
+        self.msg = "{} was not able to parsed.\n"\
+            "Package name should be either user/package: darth/deathstar:\n"\
+            "Or user/package/version darth/deathstar/1.0".format(self.name)
+        raise errors.UserError(self.msg)
