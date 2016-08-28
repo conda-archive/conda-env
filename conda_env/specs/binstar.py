@@ -8,7 +8,6 @@ try:
 except ImportError:
     get_binstar= None
 try:
-    from binstar_client import errors
     from binstar_client.utils import get_server_api
 except ImportError:
     get_server_api = None
@@ -31,6 +30,7 @@ class BinstarSpec(object):
     _packagename = None
     _package = None
     _file_data = None
+    _specs = None
     msg = None
 
     def __init__(self, name=None, **kwargs):
