@@ -1,3 +1,6 @@
+**This repository is deprecated.  All code herein now rides alongside conda proper.  https://github.com/conda/conda**
+
+
 =========
 conda-env
 =========
