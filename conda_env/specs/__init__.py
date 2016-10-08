@@ -2,13 +2,15 @@ from .binstar import BinstarSpec
 from .yaml_file import YamlFileSpec
 from .notebook import NotebookSpec
 from .requirements import RequirementsSpec
+from .jinja2_file import Jinja2Spec
 from ..exceptions import SpecNotFound
 
 all_specs = [
     BinstarSpec,
     NotebookSpec,
     YamlFileSpec,
-    RequirementsSpec
+    RequirementsSpec,
+    Jinja2Spec
 ]
 
 
