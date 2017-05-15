@@ -22,6 +22,7 @@ Examples:
 def configure_parser(sub_parsers):
     p = sub_parsers.add_parser(
         'remove',
+        aliases=['rm'],
         formatter_class=RawDescriptionHelpFormatter,
         description=_description,
         help=_help,

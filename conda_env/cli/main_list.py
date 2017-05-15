@@ -16,6 +16,7 @@ examples:
 def configure_parser(sub_parsers):
     l = sub_parsers.add_parser(
         'list',
+        aliases=['ls'],
         formatter_class=RawDescriptionHelpFormatter,
         description=description,
         help=description,
